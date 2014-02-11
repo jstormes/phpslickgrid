@@ -1,6 +1,6 @@
 # Welcome to PHPSlickGrid
 
-## PHPSlickGrid provides server side support for using SlickGrid as a full screen grid component in PHP/Zend Framework 1.12
+## PHPSlickGrid provides server side support for using SlickGrid in PHP/Zend Framework 1.12
 
 Find the outstanding SlickGrid component at [SlickGrid](https://github.com/mleibman/SlickGrid).
 
