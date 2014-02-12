@@ -44,6 +44,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	protected $_currentRole = null;
 	
+	/**
+	 * Total row count
+	 * 
+	 * @var integer
+	 */
+	protected $_totalLength = 0;
+	
 	
 	/**
 	 * Call the existing constructor then initialize our PHPSlickGrid 
@@ -60,11 +67,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		/* Default the grid name to the table name. */
 		$this->_gridName = $this->_name;
 		
-		$this->_gridInit();
-	}
-	
-	protected function _gridInit() {
-		
 		/* Initialize the grid configuration. */
 		$this->_gridConfig = new PHPSlickGrid_GridConfig();
 		$this->_gridConfig->gridName	= $this->_gridName;
@@ -72,6 +74,14 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		/* Initialize the column configuration. */
 		$this->_columnConfig = new PHPSlickGrid_ColumnConfig($this, $this->_metaTable, $this->_ACL, $this->_currentRole);
+		
+		$this->_gridConfig->gridLength = $this->getLength(array());
+		
+		$this->_gridInit();
+	}
+	
+	protected function _gridInit() {
+		
 		
 	}
 	
@@ -189,7 +199,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			 * Explode the results into row[Index][Table Name][Column] format
 			*/
 			$Results = $this->fetchAll($select)->toArray();
-				
+
 			return ($Results);
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.

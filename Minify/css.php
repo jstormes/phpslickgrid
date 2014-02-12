@@ -116,7 +116,7 @@ class PHPSlickGrid_Minify_css {
 	
 	
 	function server() {
-		header('Content-type: text/javascript');
+		header('Content-type: text/css');
 		header('Expires: '.gmdate("D, d M Y H:i:s", time() + 3600*24*365).' GMT');
 		
 		$name=md5_of_dir('./');

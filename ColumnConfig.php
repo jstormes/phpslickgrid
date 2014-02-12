@@ -92,7 +92,7 @@ class PHPSlickGrid_ColumnConfig {
                 $this->Columns[$DBColumn]->sortable=true;
                 
                 // Default width to 100 px.
-                $this->Columns[$DBColumn]->width=100;
+                $this->Columns[$DBColumn]->width=300;
                 
                 // Save the SQL data type in case it is needed later
                 $this->Columns[$DBColumn]->sql_type=$info['metadata'][$DBColumn]['DATA_TYPE'];

@@ -55,7 +55,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		// if request is for a css file serve the css file.
 		if ($this->_frontController->getRequest()->getParam('css','false')!='false') {
 			$this->view->layout()->disableLayout(true);
-			$js->serve_file($_GET['css']);
+			$css->serve_file($_GET['css']);
 				
 			exit(); // stop the view from being displayed
 			break;
@@ -89,6 +89,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		// Build the script for the view helper
 		$HTML .= "<script>\n";
 		
+		$HTML .= "var ".$Table->getGridName()."TotalRows = ".$Table->getLength(array()).";\n\n";
+		
 		// Render the column configuration to the browser:
 		$HTML .= "var ".$Table->getGridName()."Columns = ".$Table->getColumnConfiguration()->ToJSON().";\n\n";
 				
@@ -101,6 +103,11 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		// Render the grid to the browser:
 		$HTML .= "var ".$Table->getGridName()." = new Slick.Grid('#".$Table->getGridName()."', ".$Table->getGridName()."Data, ".$Table->getGridName()."Columns, ".$Table->getGridName()."Options);\n\n";
 		
+		/* Hack for jQuery/SlickGrid/Bootstrap conflict in css 
+ 		 * https://github.com/mleibman/SlickGrid/issues/742
+         */
+		$HTML .= $this->fixColumns();
+		
 		// Render grid onEvent logic:
 		$HTML .= $this->onEvents();
 		
@@ -108,14 +115,54 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		return $HTML;
 	}
 	
+	/* Hack for jQuery/SlickGrid/Bootstrap conflict in css
+	 * https://github.com/mleibman/SlickGrid/issues/742
+	*/
+	private function fixColumns() {
+		
+	}
+	
 	private function onEvents() {
 		
+		$HTML ="";
+		/********************************************************
+		 * Data Events
+		 ********************************************************/
+		// onRowCountChanged
+		$HTML .= $this->onRowCountChanged();
+		
+		// onRowChanged
+		$HTML .= $this->onRowChanged();
+		
+		/********************************************************
+		 * Grid Events
+		 *******************************************************/
 		// onSort
 		
 		// onCellChange
 		
 		// onAddNewRow
 		
+		return $HTML;
+	}
+	
+	private function onRowCountChanged() {
+		
+		$HTML = @"
+{$this->Table->getGridName()}Data.onRowCountChanged.subscribe(function (e, args) {
+    {$this->Table->getGridName()}.updateRowCount();
+    {$this->Table->getGridName()}.render();
+});\n\n";
+    	return $HTML;
+	}
+	
+	private function onRowChanged() {
+		$HTML = @"
+{$this->Table->getGridName()}Data.onRowsChanged.subscribe(function (e, args) {
+    {$this->Table->getGridName()}.invalidateRows(args.rows);
+    {$this->Table->getGridName()}.render();
+});\n\n";
+    	return $HTML;
 	}
 	
 	private function onSort() {

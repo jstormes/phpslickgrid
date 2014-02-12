@@ -20,7 +20,8 @@
 			pollFrequency : 1000000, // 1000 Seconds
 			gridName : 'grid', // Used to tie back to Zend_Session.
 			order_list : {},
-			where_list : new Array()
+			where_list : new Array(),
+			gridLength : 0
 		};
 
 		self.options = $.extend(true, {}, defaults, options);
@@ -51,7 +52,7 @@
 		}); // thrown exception.
 
 		// Total number of rows in our dataset
-		self.datalength = null;
+		self.datalength = null;//self.options['gridLength'];
 		self.lengthdate = null;
 
 		// function getLength
