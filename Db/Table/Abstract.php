@@ -51,6 +51,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	protected $_totalLength = 0;
 	
+	/**
+	 * Logging Object
+	 * 
+	 * @var Zend_Log
+	 */
+	protected $log = null;
+	
 	
 	/**
 	 * Call the existing constructor then initialize our PHPSlickGrid 
@@ -62,6 +69,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	public function __construct($config = array())
 	{	
+		$this->log = Zend_Registry::get('log');
+		
 		parent::__construct();
 		
 		/* Default the grid name to the table name. */
@@ -184,6 +193,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		try
 		{
+			$this->log->debug($options);
+			
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			

@@ -34,16 +34,22 @@
 		self.pages = new Array();
 		self.reverseLookup = new Array();
 		self.newestRecord = '0';
+		
+		// Check JSON URL
+		$.get( self.options['jsonrpc'], function() {})
+			.fail(function() {
+			alert( "jsonAction() is missing from the controller or $Grid->getGridConfiguration()->jsonrpc is wrong.\n" +
+					"JSON RPC URL is: "+self.options['jsonrpc'] );
+			});
 
 		// Service to call on the server side
 		self.service = new jQuery.Zend.jsonrpc({
 			url : self.options['jsonrpc'],
 			async : true,
-			// 'error': function(data) {alert(data);inFlight=0;}, //
+			//'error': function(data) {alert(data);inFlight=0;}, //
 			// Connection error
 			'error' : function(data) {
-				// alert('The connection to the server has timed out. Click OK
-				// to try again.');
+				//alert('The connection to the server has timed out. Click OK to try again.');
 				// inFlight = 0;
 			}, // Connection error
 			'exceptionHandler' : function(data) {

@@ -31,65 +31,11 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
 		$this->Table = $Table;
 		
-		// Get a handle on the front controller.
-		$this->_frontController = Zend_Controller_Front::getInstance();
+		// Set the json entry URL, if not all ready set:
+		if (!isset($Table->getGridConfiguration()->jsonrpc))
+			$Table->getGridConfiguration()->jsonrpc=$this->view->url(array("action"=>"json"));
 		
-		// Get all the phpslickgrid support js files to include.
-		$js=new PHPSlickGrid_Minify_js();
-		
-		// Get all the phpslickgrid support js files to include.
-		$css=new PHPSlickGrid_Minify_css();
-		
-		
-		
-		//******************************************************************
-		// Macro actions:
-		// if request is for a js file serve the js file.
-// 		if ($this->_frontController->getRequest()->getParam('js','false')!='false') {
-// 			$this->view->layout()->disableLayout(true);
-// 			$this->_frontController->getResponse()->clearBody();
-// 			$this->_frontController->setParam('noViewRenderer', true);
- 			//Zend_Controller_Front::getInstance()->getResponse()->clearBody();
-// 			Zend_Controller_Front::getInstance()
-// 			->setParam('noViewRenderer', true);
-// 			$js->serve_file($_GET['js']);
-// 			exit(); // stop the view from being displayed
-// 			break;
-// 		}
-// 		// if request is for a css file serve the css file.
-// 		if ($this->_frontController->getRequest()->getParam('css','false')!='false') {
-// 			$this->view->layout()->disableLayout(true);
-// 			//$this->_helper->viewRenderer->setNoRender(true);
-// 			$css->serve_file($_GET['css']);
-				
-// 			exit(); // stop the view from being displayed
-// 			break;
-// 		}
-// 		// if the request is for json api then server json api.
-// 		if ($this->_frontController->getRequest()->getParam('json','false')!='false') {
-// 			$this->view->layout()->disableLayout(true);
-// 			//$this->_helper->viewRenderer->setNoRender(true);
-			
-// 			// Create a new instance of a JSON webservice service using our source table and grid configuration.
-//  			$server = new PHPSlickGrid_JSON($Table);
-//  			// Expose the JSON database table service trough this action.
-//  			$server->handle();
-				
-// 			exit(); // stop the view from being displayed
-// 			break;
-// 		}
-		//******************************************************************
-		
-		// if we make is here then we are generating HTML for the view helper.
-		
-		// Add js and css to view.
-		$js->add_files_to_view($this->view);
-		$css->add_files_to_view($this->view);
-		
-		// Set the json entry URL:
-		$Table->getGridConfiguration()->jsonrpc=$this->view->url(array("action"=>"service","json"=>"true"));
-		
-		// Build the HTML for the view helper
+		// Build the HTML div for the view helper
 		$HTML = "<div id='".$Table->getGridName()."' style='height:100%;'></div>\n\n";
 		
 		// Build the script for the view helper
@@ -110,30 +56,27 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "var ".$Table->getGridName()." = new Slick.Grid('#".$Table->getGridName()."', ".$Table->getGridName()."Data, ".$Table->getGridName()."Columns, ".$Table->getGridName()."Options);\n\n";
 		
 		
-		// Render grid onEvent logic:
-		$HTML .= $this->onEvents();
+		// Render any needed Dynamic Java Script:
+		$HTML .= $this->DynamicJS();
 		
 		$HTML .= "</script>\n";
 		return $HTML;
 	}
 	
 	
-	private function onEvents() {
+	private function DynamicJS() {
 		
 		$HTML ="";
 		/********************************************************
 		 * Data Events
 		 ********************************************************/
-		// onRowCountChanged
 		$HTML .= $this->onRowCountChanged();
-		
-		// onRowChanged
 		$HTML .= $this->onRowChanged();
 		
 		/********************************************************
 		 * Grid Events
 		 *******************************************************/
-		// onSort
+		$HTML .= $this->onSort();
 		
 		// onCellChange
 		
@@ -144,26 +87,49 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onRowCountChanged() {
 		
-		$HTML = @"
-{$this->Table->getGridName()}Data.onRowCountChanged.subscribe(function (e, args) {
-    {$this->Table->getGridName()}.updateRowCount();
-    {$this->Table->getGridName()}.render();
-});\n\n";
+		$GridName = $this->Table->getGridName();
+		
+		$HTML  = "{$GridName}Data.onRowCountChanged.subscribe(function (e, args) { \n";
+		$HTML .= "    {$GridName}.updateRowCount();\n";
+		$HTML .= "    {$GridName}.render();\n";
+		$HTML .= "});\n\n";
+		
     	return $HTML;
 	}
 	
 	private function onRowChanged() {
-		$HTML = @"
-{$this->Table->getGridName()}Data.onRowsChanged.subscribe(function (e, args) {
-    {$this->Table->getGridName()}.invalidateRows(args.rows);
-    {$this->Table->getGridName()}.render();
-});\n\n";
+		
+		$GridName = $this->Table->getGridName();
+		
+		$HTML  = "{$GridName}Data.onRowsChanged.subscribe(function (e, args) { \n";
+    	$HTML .= "    {$GridName}.invalidateRows(args.rows);\n";
+    	$HTML .= "    {$GridName}.render();\n";
+		$HTML .= "});\n\n";
+		
     	return $HTML;
 	}
 	
 	private function onSort() {
 		
-		$HTML = "";
+		$GridName = $this->Table->getGridName();
+		
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire up the sort to the data layer\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}.onSort.subscribe(function (e, args) {\n";
+		$HTML .= "  var cols = args.sortCols;\n";
+		$HTML .= "  sortarray = [];\n";
+		$HTML .= "  for (var i = 0, l = cols.length; i < l; i++) {\n";
+		$HTML .= "    if (cols[i].sortAsc) \n";
+		$HTML .= "      sortarray.push(cols[i].sortCol.field);\n";
+		$HTML .= "    else\n";
+		$HTML .= "      sortarray.push(cols[i].sortCol.field+' desc');\n";
+		$HTML .= "  }\n";
+		$HTML .= "  {$GridName}Data.setSort(sortarray);\n";
+		$HTML .= "  {$GridName}Data.invalidate();\n";
+		$HTML .= "  {$GridName}.invalidate();\n";
+		$HTML .= "  {$GridName}.render();\n";
+		$HTML .= "});\n\n";
 		
 		return $HTML;
 	}
