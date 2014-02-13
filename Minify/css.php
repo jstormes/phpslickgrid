@@ -104,7 +104,7 @@ class PHPSlickGrid_Minify_css {
 	
 	function add_files_to_view($view) {
 		
-		$action = $view->url(array("css"=>"true"));
+		$action = $view->url(array("action"=>"service"));
 		$files=$this->files_direct();
 		
 		foreach($files as $file) {

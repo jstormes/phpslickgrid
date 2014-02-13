@@ -52,41 +52,35 @@
 		}); // thrown exception.
 
 		// Total number of rows in our dataset
-		self.datalength = null;//self.options['gridLength'];
-		self.lengthdate = null;
+		self.datalength = (self.options['gridLength'] - 0);
+		self.lengthdate = new Date();
 
 		// function getLength
 		function getLength() {
-
-			// console.log("getLength()");
 			var now = new Date();
 
 			// If it has been more than 1000ms (1 second)
 			// trigger the getlength callback.
 			if (now - self.lengthdate > 1000) {
 				self.lengthdate = now;
-
 				// Call JSON service for getLength passing self.options as
 				// options.
-				// Trigger notification for grid self refresh
 				self.service.getLength(self.options, {
 					'success' : function(data) {	
 						// If the length has changed update the grid.
 						if (data!=self.datalength) {
-							onRowCountChanged.notify({
-								previous : self.datalength,
-								current : (self.datalength)
-							}, null, self);
-							self.datalength = data;
+							self.datalength = (data - 0);
+							// Trigger notification for grid self refresh
+							onRowCountChanged.notify();
 						}
 					}
 				});
 			}
-
 			return (self.datalength - 0);
 		}
 
 		function getBlock(block, data) {
+			
 			var blockSize = self.options.blockSize;
 			var newestRecord = self.options.newestRecord;
 

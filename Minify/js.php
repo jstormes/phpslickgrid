@@ -103,7 +103,7 @@ class PHPSlickGrid_Minify_js {
 	
 	function add_files_to_view($view) {
 		
-		$action = $view->url(array("js"=>"true"));
+		$action = $view->url(array("action"=>"service"));
 		$files=$this->files_direct();
 		
 		foreach($files as $file) {

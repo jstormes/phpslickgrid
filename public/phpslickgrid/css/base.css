@@ -1,7 +1,6 @@
 /* Hack for jQuery/SlickGrid/Bootstrap conflict in css 
  * https://github.com/mleibman/SlickGrid/issues/742
  */
-
 [class^="slickgrid_"],
 [class^="slickgrid_"] div {
     -webkit-box-sizing: content-box;

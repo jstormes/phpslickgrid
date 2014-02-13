@@ -45,33 +45,39 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		//******************************************************************
 		// Macro actions:
 		// if request is for a js file serve the js file.
-		if ($this->_frontController->getRequest()->getParam('js','false')!='false') {
-			$this->view->layout()->disableLayout(true);
-			$js->serve_file($_GET['js']);
-			
-			exit(); // stop the view from being displayed
-			break;
-		}
-		// if request is for a css file serve the css file.
-		if ($this->_frontController->getRequest()->getParam('css','false')!='false') {
-			$this->view->layout()->disableLayout(true);
-			$css->serve_file($_GET['css']);
+// 		if ($this->_frontController->getRequest()->getParam('js','false')!='false') {
+// 			$this->view->layout()->disableLayout(true);
+// 			$this->_frontController->getResponse()->clearBody();
+// 			$this->_frontController->setParam('noViewRenderer', true);
+ 			//Zend_Controller_Front::getInstance()->getResponse()->clearBody();
+// 			Zend_Controller_Front::getInstance()
+// 			->setParam('noViewRenderer', true);
+// 			$js->serve_file($_GET['js']);
+// 			exit(); // stop the view from being displayed
+// 			break;
+// 		}
+// 		// if request is for a css file serve the css file.
+// 		if ($this->_frontController->getRequest()->getParam('css','false')!='false') {
+// 			$this->view->layout()->disableLayout(true);
+// 			//$this->_helper->viewRenderer->setNoRender(true);
+// 			$css->serve_file($_GET['css']);
 				
-			exit(); // stop the view from being displayed
-			break;
-		}
-		// if the request is for json api then server json api.
-		if ($this->_frontController->getRequest()->getParam('json','false')!='false') {
-			$this->view->layout()->disableLayout(true);
+// 			exit(); // stop the view from being displayed
+// 			break;
+// 		}
+// 		// if the request is for json api then server json api.
+// 		if ($this->_frontController->getRequest()->getParam('json','false')!='false') {
+// 			$this->view->layout()->disableLayout(true);
+// 			//$this->_helper->viewRenderer->setNoRender(true);
 			
-			// Create a new instance of a JSON webservice service using our source table and grid configuration.
- 			$server = new PHPSlickGrid_JSON($Table);
- 			// Expose the JSON database table service trough this action.
- 			$server->handle();
+// 			// Create a new instance of a JSON webservice service using our source table and grid configuration.
+//  			$server = new PHPSlickGrid_JSON($Table);
+//  			// Expose the JSON database table service trough this action.
+//  			$server->handle();
 				
-			exit(); // stop the view from being displayed
-			break;
-		}
+// 			exit(); // stop the view from being displayed
+// 			break;
+// 		}
 		//******************************************************************
 		
 		// if we make is here then we are generating HTML for the view helper.
@@ -81,10 +87,10 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$css->add_files_to_view($this->view);
 		
 		// Set the json entry URL:
-		$Table->getGridConfiguration()->jsonrpc=$this->view->url(array("json"=>"true"));
+		$Table->getGridConfiguration()->jsonrpc=$this->view->url(array("action"=>"service","json"=>"true"));
 		
 		// Build the HTML for the view helper
-		$HTML = "<div id='".$Table->getGridName()."' style='height:100%; width:100%;'></div>\n\n";
+		$HTML = "<div id='".$Table->getGridName()."' style='height:100%;'></div>\n\n";
 		
 		// Build the script for the view helper
 		$HTML .= "<script>\n";
@@ -103,10 +109,6 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		// Render the grid to the browser:
 		$HTML .= "var ".$Table->getGridName()." = new Slick.Grid('#".$Table->getGridName()."', ".$Table->getGridName()."Data, ".$Table->getGridName()."Columns, ".$Table->getGridName()."Options);\n\n";
 		
-		/* Hack for jQuery/SlickGrid/Bootstrap conflict in css 
- 		 * https://github.com/mleibman/SlickGrid/issues/742
-         */
-		$HTML .= $this->fixColumns();
 		
 		// Render grid onEvent logic:
 		$HTML .= $this->onEvents();
@@ -115,12 +117,6 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		return $HTML;
 	}
 	
-	/* Hack for jQuery/SlickGrid/Bootstrap conflict in css
-	 * https://github.com/mleibman/SlickGrid/issues/742
-	*/
-	private function fixColumns() {
-		
-	}
 	
 	private function onEvents() {
 		
