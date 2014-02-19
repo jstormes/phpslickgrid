@@ -147,6 +147,7 @@
 		}
 
 		function updateItem(item) {
+			console.log("updateItem in datachace.js");
 			self.service.updateItem(self.newestRecord, item, self.options);
 		}
 

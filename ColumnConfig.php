@@ -116,7 +116,7 @@ class PHPSlickGrid_ColumnConfig {
     	$JSON = '[';
     	
     	foreach($this->Columns as $Column)
-    		$JSON.=json_encode($Column->data).",\n";
+    		$JSON.=json_encode($Column->data,JSON_FORCE_OBJECT).",\n";
     	
     	// trim the trailing "," off the string.
     	$JSON = rtrim($JSON,",\n");
@@ -124,6 +124,40 @@ class PHPSlickGrid_ColumnConfig {
     	$JSON .= "]";
     	
     	return $JSON;
+    }
+    
+    public function ToJavaScript() {    
+    
+    	// This is a hack to overcome the fact the PHP is typeless
+    	// and the parameters have impled types.
+    	$integers = array('width','sql_length');
+    	$objects = array('editor','formatter');
+    	$booleans = array('sortable','multiColumnSort');
+    
+    	$dont_quote = array_merge($integers,$objects,$booleans);
+    
+    	$column="";
+    	foreach($this->Columns as $Column) {
+    		if (!isset($Column->hidden)) {
+    			$line="";
+    			foreach($Column->data as $Key=>$setting) {
+    				if (in_array($Key,$dont_quote))
+    				if (in_array($Key, $booleans))
+    					$line.=$Key.": ".($setting?'true':'false').", ";
+    				else
+    					$line.=$Key.": ".$setting.", ";
+    				else
+    					$line.=$Key.": \"".$setting."\", ";
+    			}
+    			$line="\t{".rtrim($line,', ')."},\n";
+    			$column.=$line;
+    		}
+    	}
+    	$column=rtrim($column,",\n");
+    
+    	$HTML = "[\n{$column}\n];\n";
+    	 
+    	return $HTML;
     }
     
     

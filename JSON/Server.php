@@ -32,6 +32,7 @@ class PHPSlickGrid_JSON_Server extends Zend_Json_Server
 			if ('_' == substr($method->getName(), 0, 1)) {
                 continue;
             }
+
 			$definition = $this->_buildSignature($method, $class);
 			$this->_addMethodServiceMap($definition);
 		}

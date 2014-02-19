@@ -154,6 +154,7 @@ class PHPSlickGrid_JSON_DataCache extends PHPSlickGrid_JSON_Abstract {
 	public function updateItem($updt_dtm, $row, $options=null) {
 		//sleep(5); // Simulate a slow reply
 		try {
+			$this->log->debug("Updating in DataCache.php");
 			//throw new Exception(print_r($this->PrimaryKey,true));
 			$parameters=array_merge_recursive($options,$this->parameters);
 	

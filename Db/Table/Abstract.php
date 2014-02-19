@@ -69,7 +69,15 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	public function __construct($config = array())
 	{	
-		$this->log = Zend_Registry::get('log');
+		// Setup our log, very useful for debugging.
+		if (Zend_Registry::isRegistered('log')) {
+			$this->log = Zend_Registry::get('log');
+		}
+		else {
+			$this->log = new Zend_Log();
+			$writer_firebug = new Zend_Log_Writer_Firebug();
+			$this->log->addWriter($writer_firebug);
+		}
 		
 		parent::__construct();
 		
@@ -193,8 +201,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		try
 		{
-			$this->log->debug($options);
-			
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
@@ -234,7 +240,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		//throw new Exception('Error Msg', 32001);
 		//sleep(10);
 		try {
-			$parameters=array_merge_recursive($options,$this->parameters);
+			//$parameters=array_merge_recursive($options,$this->parameters);
 			$res = array();
 			if (isset($updt_dtm)) {
 				
@@ -257,16 +263,27 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		try {
 			//throw new Exception(print_r($this->PrimaryKey,true));
-			$parameters=array_merge_recursive($options,$this->parameters);
+			//$parameters=array_merge_recursive($options,$this->parameters);
 	
-			$Row=$this->Table->find($row[$this->PrimaryKey])->current();
+			$info=$this->info();
+			
+			//$this->log->debug($row[$info['name']."$".($this->_primary[1])]);
+			//return;
+			
+			$t=$row[$info['name']."$".($this->_primary[1])];
+			//$this->log->debug($t);
+			//return;
+			$Row=$this->find($t)->current();
 			foreach($row as $Key=>$Value) {
+				// Strip table alias from column name
+				$Key = str_replace($info['name']."$", "", $Key);
+				//$this->log->debug($Key);
 				if (isset($Row[$Key])) {
 					if ($Value=='null') $Value=null;
-					$Row[$Key]=$Value;
+						$Row[$Key]=$Value;
 				}
 			}
-			$Row[$this->UpdatedColumn]=null;
+			//$Row[$this->UpdatedColumn]=null;
 			$Row->save();
 	
 			return $this->getUpdated($updt_dtm,$options);
@@ -289,23 +306,26 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			//throw new Exception(print_r($this->PrimaryKey,true));
 			//             $parameters=array_merge($options,$this->parameters);
 	
-			$this->log->debug($row);
+			//$this->log->debug($row);
+			$info=$this->info();
 	
-			$NewRow=$this->Table->createRow();
+			$NewRow=$this->createRow();
 	
-			foreach($this->Config->staticFields as $key=>$value) {
-				$row[$key]=$value;
+			//foreach($this->Config->staticFields as $key=>$value) {
+			//	$row[$key]=$value;
 	
-			}
+			//}
 	
 			foreach($row as $Key=>$Value) {
+				// Strip table alias from column name
+				$Key = str_replace($info['name']."$", "", $Key);
 				if (isset($NewRow[$Key])) {
 					if ($Value=='null') $Value=null;
 					$NewRow[$Key]=$Value;
 				}
 			}
 	
-			$NewRow[$this->UpdatedColumn]=null;
+			//$NewRow[$this->UpdatedColumn]=null;
 			$NewRow->save();
 	
 			return null;
