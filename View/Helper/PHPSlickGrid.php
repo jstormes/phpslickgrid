@@ -13,9 +13,26 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	 */
 	var $Table = null;
 	
-	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table) {
+	/**
+	 * Options for the view
+	 * 
+	 * @var array
+	 */
+	var $Options = null;
+	
+	/**
+	 * 
+	 *
+	 * By: jstormes Feb 20, 2014
+	 *
+	 * @param PHPSlickGrid_Db_Table $Table
+	 * @param array $Options
+	 * @return string
+	 */
+	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table,array $Options=array()) {
 		
 		$this->Table = $Table;
+		$this->Options = $Options;
 		
 		$GridName = $this->Table->getGridName();
 		
@@ -38,7 +55,10 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "var {$GridName}Options = ".$Table->getGridConfiguration()->ToJSON().";\n\n";
 
 		// Render the grid data connection to the browser:
-		$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}Options);\n\n";
+		if (isset($Options['DataFromGrid']))
+			$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataMirror('{$Options['DataFromGrid']}Data');\n\n";
+		else
+			$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}Options);\n\n";
 		
 		// Render the grid to the browser:
 		$HTML .= "var {$GridName} = new Slick.Grid('#{$GridName}', {$GridName}Data, {$GridName}Columns, {$GridName}Options);\n\n";
