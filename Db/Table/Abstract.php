@@ -180,6 +180,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			
 			//$this->addConditionsToSelect($this->Config->table_name,$this->Config->conditions, $select);
 			//$this->createWhere($select, $options['where_list']);
+			//$this->log->debug($select." ");
+			
 			
 			$count_select = $this->select();
 			$count_select->setIntegrityCheck(false);
@@ -201,6 +203,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		try
 		{
+			//return array();
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
