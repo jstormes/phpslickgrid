@@ -28,19 +28,19 @@
 
 		// function getLength
 		function getLength() {
-//			console.log(typeof eval(DataObjectToMirror));
-//			return DataObjectToMirror['getLength']();
-			if (typeof window[DataObjectToMirror] != 'undefined') {
-				console.log("DataObjectToMirror['getLength'] != 'undefined'");
+			
+			if (typeof window[DataObjectToMirror] != 'undefined')
 				return window[DataObjectToMirror].getLength();
-			}
+
 			return (0);
 		}
 
 
 		function getItem(item) {
 
-			// return whatever we have.
+			if (typeof window[DataObjectToMirror] != 'undefined')
+				return window[DataObjectToMirror].getItem(item);
+			
 			return [];
 		}
 
