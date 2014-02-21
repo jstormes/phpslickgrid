@@ -226,7 +226,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	/**
-	 * return the primay keys of all rows that are newer than
+	 * return the primary keys of all rows that are newer than
 	 * the passed date.
 	 *
 	 * NOTE: if date created=date updated then don't return that row.
@@ -252,6 +252,37 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		}
 	}
 	
+	
+	private function AddTableRefrence($row) {
+		
+		$info=$this->info();
+		$Row = array();
+		
+		foreach($row as $Key=>$Value) {
+			$Key = str_replace($info['name']."$", "", $Key);
+			$Row[$info['name']."$".$Key]=$Value;
+		}
+		
+		return $Row;
+	}
+	
+	private function RemoveTableRefrence($row) {
+		
+		$info=$this->info();
+		$Row = array();
+		
+		foreach($row as $Key=>$Value) {
+			$Key = str_replace($info['name']."$", "", $Key);
+			$Row[$Key]=$Value;
+		}
+		
+		return $Row;
+	}
+	
+	public function _updateItem($updt_dtm, $row, $options=null) {
+		return $row;
+	}
+	
 	/**
 	 * update an existing row
 	 *
@@ -262,36 +293,39 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function updateItem($updt_dtm, $row, $options=null) {
 		
 		try {
-			//throw new Exception(print_r($this->PrimaryKey,true));
-			//$parameters=array_merge_recursive($options,$this->parameters);
-	
-			$info=$this->info();
+			// Remove any tables references from column names.
+			$row = $this->RemoveTableRefrence($row);
 			
-			//$this->log->debug($row[$info['name']."$".($this->_primary[1])]);
-			//return;
+			// Perform any updateItem logic
+			$row = $this->_updateItem($updt_dtm, $row, $options);
+			if ($row===null) return null;  // if null update logic short circuited update.
 			
-			$t=$row[$info['name']."$".($this->_primary[1])];
-			//$this->log->debug($t);
-			//return;
-			$Row=$this->find($t)->current();
+			// Find the exiting Row in the database to update
+			$Row=$this->find($row[$this->_primary[1]])->current();
+			
+			// Copy values from the array to the existing row object.
 			foreach($row as $Key=>$Value) {
-				// Strip table alias from column name
-				$Key = str_replace($info['name']."$", "", $Key);
-				//$this->log->debug($Key);
 				if (isset($Row[$Key])) {
 					if ($Value=='null') $Value=null;
 						$Row[$Key]=$Value;
 				}
 			}
-			//$Row[$this->UpdatedColumn]=null;
+ 			
+			// Save the row back into the database.
 			$Row->save();
 	
+			// return any rows updated from the last time this was called.
 			return $this->getUpdated($updt_dtm,$options);
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
 		}
 	
+	}
+	
+	
+	public function _addItem($row,$options=null) {
+		return $row;
 	}
 	
 	/**
@@ -302,33 +336,34 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @return null
 	 */
 	public function addItem($row,$options=null) {
+		
 		try {
-			//throw new Exception(print_r($this->PrimaryKey,true));
-			//             $parameters=array_merge($options,$this->parameters);
+			// Remove any tables references from column names.
+			$row=$this->RemoveTableRefrence($row);
 	
-			//$this->log->debug($row);
-			$info=$this->info();
-	
+			// Perform any updateItem logic
+			$row=$this->_updateItem(null, $row, $options);
+			if ($row===null) return null;  // if null update logic short circuited update.		
+					
+			// Create the new row object
 			$NewRow=$this->createRow();
 	
-			//foreach($this->Config->staticFields as $key=>$value) {
-			//	$row[$key]=$value;
-	
-			//}
-	
+			// Copy values from the array to the new row object.
 			foreach($row as $Key=>$Value) {
-				// Strip table alias from column name
-				$Key = str_replace($info['name']."$", "", $Key);
 				if (isset($NewRow[$Key])) {
 					if ($Value=='null') $Value=null;
 					$NewRow[$Key]=$Value;
 				}
 			}
-	
-			//$NewRow[$this->UpdatedColumn]=null;
+			
+			// Save the new row.
 			$NewRow->save();
-	
-			return null;
+			
+			// Perform any add item logic.
+			$row=$this->_addItem($NewRow->toArray(),$options);
+			
+			// Pass the new row array back to javascript.
+			return $row;
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
