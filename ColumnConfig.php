@@ -142,8 +142,6 @@ class PHPSlickGrid_ColumnConfig {
     	$booleans = array('sortable','multiColumnSort');
     
     	$dont_quote = array_merge($integers,$objects,$booleans);
-    
-    	Zend_Registry::get('log')->debug($this->Columns);
     	
     	$column="";
     	foreach($this->Columns as $Column) {
