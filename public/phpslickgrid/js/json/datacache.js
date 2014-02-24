@@ -178,6 +178,7 @@
 			"getItem" : getItem,
 			"addItem": addItem,
 			"updateItem": updateItem,
+			"deleteItem": deleteItem,
 			"onRowCountChanged" : onRowCountChanged,
 			"onRowsChanged" : onRowsChanged,
 			"setSort" : setSort,

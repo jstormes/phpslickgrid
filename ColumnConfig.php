@@ -32,7 +32,7 @@ class PHPSlickGrid_ColumnConfig {
     public $JavascriptFiles = array();
     public $grid_registerPlugin = array();
     
-    public $Hidden = array();
+    public $HardHidden = array();
     public $ReadOnly = array();
     
     public $PreRegister = array();
@@ -126,6 +126,13 @@ class PHPSlickGrid_ColumnConfig {
     	return $JSON;
     }
     
+    private function DerefrenceTable($column) {
+    	if (strstr($column,'$'))
+    		return ltrim(strstr($column,'$'),'$');
+    	else
+    		return $column;
+    }
+    
     public function ToJavaScript() {    
     
     	// This is a hack to overcome the fact the PHP is typeless
@@ -138,19 +145,23 @@ class PHPSlickGrid_ColumnConfig {
     
     	$column="";
     	foreach($this->Columns as $Column) {
-    		if (!isset($Column->hidden)) {
-    			$line="";
-    			foreach($Column->data as $Key=>$setting) {
-    				if (in_array($Key,$dont_quote))
-    				if (in_array($Key, $booleans))
-    					$line.=$Key.": ".($setting?'true':'false').", ";
-    				else
-    					$line.=$Key.": ".$setting.", ";
-    				else
-    					$line.=$Key.": \"".$setting."\", ";
-    			}
-    			$line="\t{".rtrim($line,', ')."},\n";
-    			$column.=$line;
+    		$db_column=$this->DerefrenceTable($Column->field);
+    		// Don't even send hard hidden columns to browser.
+    		if (!in_array($db_column, $this->HardHidden)) {
+	    		if (!isset($Column->hidden)) {
+	    			$line="";
+	    			foreach($Column->data as $Key=>$setting) {
+	    				if (in_array($Key,$dont_quote))
+	    				if (in_array($Key, $booleans))
+	    					$line.=$Key.": ".($setting?'true':'false').", ";
+	    				else
+	    					$line.=$Key.": ".$setting.", ";
+	    				else
+	    					$line.=$Key.": \"".$setting."\", ";
+	    			}
+	    			$line="\t{".rtrim($line,', ')."},\n";
+	    			$column.=$line;
+	    		}
     		}
     	}
     	$column=rtrim($column,",\n");

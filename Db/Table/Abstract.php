@@ -282,7 +282,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		return $Row;
 	}
 	
-	public function _updateItem($updt_dtm, $row, $options=null) {
+	public function _updateItem($row, $options) {
 		return $row;
 	}
 	
@@ -300,7 +300,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$row = $this->RemoveTableRefrence($row);
 			
 			// Perform any updateItem logic
-			$row = $this->_updateItem($updt_dtm, $row, $options);
+			$row = $this->_updateItem($row, $options);
 			if ($row===null) return null;  // if null update logic short circuited update.
 			
 			// Find the exiting Row in the database to update
@@ -327,7 +327,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	
-	public function _addItem($row,$options=null) {
+	public function _addItem($row,$options) {
 		return $row;
 	}
 	
@@ -343,13 +343,14 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		try {
 			// Remove any tables references from column names.
 			$row=$this->RemoveTableRefrence($row);
-	
-			// Perform any updateItem logic
-			$row=$this->_updateItem(null, $row, $options);
-			if ($row===null) return null;  // if null update logic short circuited update.		
-					
+			
+			// Perform any custom addItem logic
+			$row=$this->_addItem($row,$options);
+			if ($row===null) return null;  	// if custom add logic returns null,
+											// it handled the add.
+				
 			// Create the new row object
-			$NewRow=$this->createRow();
+			$NewRow=$this->createRow();	
 	
 			// Copy values from the array to the new row object.
 			foreach($row as $Key=>$Value) {
@@ -362,9 +363,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			// Save the new row.
 			$NewRow->save();
 			
-			// Perform any add item logic.
-			$row=$this->_addItem($NewRow->toArray(),$options);
-			
 			// Pass the new row array back to javascript.
 			return $row;
 		}
@@ -374,6 +372,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	}
 	
+	
+	public function _deleteItem($row,$options) {
+		return $row;
+	}
 	
 	/**
 	 * delete an existing row
@@ -385,10 +387,16 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function deleteItem($row, $options=null) {
 		//sleep(5); // Simulate a slow reply
 		try {
-			//throw new Exception(print_r($this->PrimaryKey,true));
-			$parameters=array_merge_recursive($options,$this->parameters);
-	
-			$Row=$this->Table->find($row[$this->PrimaryKey])->current();
+			// Remove any tables references from column names.
+			$row = $this->RemoveTableRefrence($row);
+			
+			// Perform any custom deleteItem logic
+			$row=$this->_deleteItem($row,$options);
+			if ($row===null) return null;  	// if custom delete logic returns null,
+											// it handled the delete.
+			
+			// Find the exiting Row in the database to update
+			$Row=$this->find($row[$this->_primary[1]])->current();
 			$Row->delete();
 	
 			return null;
