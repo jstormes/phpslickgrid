@@ -15,3 +15,8 @@ Some highlights:
 * Support for millions of rows
 
 stuff.
+
+Ideas:
+
+1) Make grids consumable by MS-Office:
+http://office.microsoft.com/en-us/excel-help/get-external-data-from-a-web-page-HA010218472.aspx#BMmake_a_web_page_redirect_a_web_query_

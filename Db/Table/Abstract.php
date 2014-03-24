@@ -169,6 +169,19 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		return $select;
 	}
 	
+	public function addConditionsToSelect($Config, $select) {
+		
+		foreach($conditions as $condition) {
+			//$this->log->debug($condition);
+		
+			if ($condition->type=='and')
+				$select->where($condition->column.$condition->operator." ? ",$condition->value);
+			else
+				$select->orWhere($condition->column.$condition->operator." ? ",$condition->value);
+		}
+		
+	}
+	
 	public function getLength($options) {
 
 		try

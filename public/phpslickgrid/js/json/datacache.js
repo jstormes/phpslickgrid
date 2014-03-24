@@ -138,6 +138,7 @@
 				self.service.getBlock(block, self.options, {
 					'success' : function(data) {
 						getBlock(block, data);
+						console.log(block);
 					}
 				});
 			}
