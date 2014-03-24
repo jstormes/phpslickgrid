@@ -78,23 +78,25 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$writer_firebug = new Zend_Log_Writer_Firebug();
 			$this->log->addWriter($writer_firebug);
 		}
-		
-		parent::__construct();
-		
+			
 		/* Default the grid name to the table name. */
 		$this->_gridName = $this->_name;
+		
+		parent::__construct();
 		
 		/* Initialize the grid configuration. */
 		$this->_gridConfig = new PHPSlickGrid_GridConfig();
 		$this->_gridConfig->gridName	= $this->_gridName;
 		$this->_gridConfig->tableName	= $this->_name;
-		
+			
 		/* Initialize the column configuration. */
 		$this->_columnConfig = new PHPSlickGrid_ColumnConfig($this, $this->_metaTable, $this->_ACL, $this->_currentRole);
 		
+		$this->_gridInit();
+		
 		$this->_gridConfig->gridLength = $this->getLength(array());
 		
-		$this->_gridInit();
+		
 	}
 	
 	protected function _gridInit() {
@@ -166,20 +168,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$select->setIntegrityCheck(false);
 		$select->from(array($info['name'] => $info['name']),$columns);
 		
+		
 		return $select;
 	}
 	
-	public function addConditionsToSelect($Config, $select) {
-		
-		foreach($conditions as $condition) {
-			//$this->log->debug($condition);
-		
-			if ($condition->type=='and')
-				$select->where($condition->column.$condition->operator." ? ",$condition->value);
-			else
-				$select->orWhere($condition->column.$condition->operator." ? ",$condition->value);
-		}
-		
+
+	public function addConditionsToSelect(Zend_Db_Select $select) {
+		return $select;
 	}
 	
 	public function getLength($options) {
@@ -191,7 +186,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			
 			$select = $this->buildSelect($options);
 			
-			//$this->addConditionsToSelect($this->Config->table_name,$this->Config->conditions, $select);
+			$select = $this->addConditionsToSelect($select);
 			//$this->createWhere($select, $options['where_list']);
 			//$this->log->debug($select." ");
 			
@@ -221,6 +216,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
 			$select = $this->buildSelect($options);
+			$select = $this->addConditionsToSelect($select);
 			$select->limit($options['blockSize'],$block*$options['blockSize']);
 			
 			// Build our order by

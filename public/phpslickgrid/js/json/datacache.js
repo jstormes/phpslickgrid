@@ -153,6 +153,7 @@
 		}
 
 		function addItem(item) {
+			self.lengthdate=0; // force new length
 			self.service.addItem(item, self.options);
 		}
 		

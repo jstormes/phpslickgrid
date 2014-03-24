@@ -13,15 +13,12 @@ class PHPSlickGrid_JSON {
     
     function __construct($Table=null,$Config=null) {
         
-        if (is_object($Table)) {
-            //if (get_class($Table)=='Zend_Db_Table_Abstract') {
-                $this->Table=get_class($Table);
-            //}
-            
-        }
-        else {
+        //if (is_object($Table)) {
+        //    $this->Table=get_class($Table);
+        //}
+        //else {
         	$this->Table = $Table;
-        }
+        //}
         
         $this->classList = array();
         
