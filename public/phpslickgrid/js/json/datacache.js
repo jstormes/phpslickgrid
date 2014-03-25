@@ -11,29 +11,34 @@
 
 		var self = this;
 
+		console.log(options);
 		var defaults = {
-			jsonrpc : null,
-			upd_dtm_col : null,
-			primay_col : null,
-			blockSize : 100,
-			bufferSize : 10,
-			pollFrequency : 1000000, // 1000 Seconds
-			gridName : 'grid', // Used to tie back to Zend_Session.
-			order_list : {},
-			where_list : new Array(),
-			gridLength : 0
+			jsonrpc : null,     	// JSON RPC url
+			upd_dtm_col : null, 	// Timestamp column, used to keep track of when to "update" the column values.
+			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
+			blockSize : 100,  		// Size of a block in rows (records).
+			blocksMax : 10,  		// Maximum number of blocks to keep at any given time.
+			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			order_list : {},		// Current sort orders
+			filters : new Array(),  // Curent filters
+			gridName : 'grid', 		// Used to tie back to Zend_Session.  (Depreciated)
+			gridLength : 0			// Length of current grid in rows or (rows + 1) if we can add rows.(Depreciated)
 		};
 
+		// Merge defaults with passed options.
 		self.options = $.extend(true, {}, defaults, options);
-
+		
 		// events
 		var onRowCountChanged = new Slick.Event();
 		var onRowsChanged = new Slick.Event();
 
+		// Track active buffers.
+		self.activeBuffers = [];
+		
 		// Pages of our data
-		self.pages = new Array();
-		self.reverseLookup = new Array();
-		self.newestRecord = '0';
+		self.pages = new Array();			// Active Buffer
+		self.reverseLookup = new Array();	// Reverse lookup hash index['k'+primary key from db] = row in slickgrid.
+		self.newestRecord = '0';			// Time stamp of the newest record in the buffers.
 		
 		// Check JSON URL
 		$.get( self.options['jsonrpc'], function() {})
@@ -89,6 +94,13 @@
 			
 			var blockSize = self.options.blockSize;
 			var newestRecord = self.options.newestRecord;
+			
+			self.activeBuffers.push(block);
+            console.log('active buffers '+self.activeBuffers);
+            if (self.activeBuffers.length>=self.options.blocksMax) {
+	            var toRemove=self.activeBuffers.shift(block);
+	            delete self.pages[toRemove];
+            }
 
 			self.pages[block] = new Object();
 			self.pages[block].data = data;
@@ -112,8 +124,8 @@
 						+ i;
 			}
 			// Keep a record of the newest record we have seen
-			if (newestRecord < self.pages[block].updt_dtm)
-				newestRecord = self.pages[block].updt_dtm;
+			if (self.newestRecord < self.pages[block].updt_dtm)
+				self.newestRecord = self.pages[block].updt_dtm;
 
 			// Tell all subscribers (ie slickgrid) the data change changed for
 			// this block
@@ -165,12 +177,39 @@
 			self.datalength = null;
 			self.pages = [];
 			self.reverseLookup = [];
-			// self.activeBuffers = [];
-			// self.newestRecord='0';
+			self.activeBuffers = [];
+			self.newestRecord='0';
 		}
 
 		function setSort(sortarray) {
 			self.options.order_list = sortarray;
+		}
+		
+		// Setup polling for new data
+		// if we have a pollFrequency and we have an updated timestamp 
+		// column we can poll
+		if ((self.options.pollFrequency)&&(self.options.upd_dtm_col)) {
+			
+			
+			
+			function refresh_buffers(data) {
+				console.log("refresh_buffers(data)");
+				
+				//TODO: put buffer refresh code here, mark view as dirty.
+				
+				setTimeout(new_poll, self.options.pollFrequency);
+			}
+			
+			function new_poll() {
+				self.service.getUpdated(self.newestRecord,{'success':function(data) {refresh_buffers(data); },
+				'error' : function(data) {setTimeout(new_poll, self.options.pollFrequency); }, 
+				'exceptionHandler' : function(data) {setTimeout(new_poll, self.options.pollFrequency); }
+				});
+			}
+			
+			// Kick off the polling
+			console.log("Starting poll service");
+			new_poll();
 		}
 
 		return {

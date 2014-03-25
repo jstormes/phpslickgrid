@@ -88,6 +88,20 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridConfig = new PHPSlickGrid_GridConfig();
 		$this->_gridConfig->gridName	= $this->_gridName;
 		$this->_gridConfig->tableName	= $this->_name;
+		
+		// Get primary key column.
+		if (is_string($this->_primary)) {
+			$this->_gridConfig->primay_col = $this->_primary;
+		}
+		
+		// Get time stamp column
+		$this->_setupMetadata();
+		foreach($this->_metadata as $Value) {
+			if ($Value['DEFAULT']=='CURRENT_TIMESTAMP') {
+				$this->_gridConfig->upd_dtm_col=$Value['COLUMN_NAME'];
+				break;
+			}
+		}
 			
 		/* Initialize the column configuration. */
 		$this->_columnConfig = new PHPSlickGrid_ColumnConfig($this, $this->_metaTable, $this->_ACL, $this->_currentRole);
@@ -95,7 +109,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridInit();
 		
 		$this->_gridConfig->gridLength = $this->getLength(array());
-		
 		
 	}
 	
