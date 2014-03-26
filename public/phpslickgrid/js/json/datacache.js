@@ -14,14 +14,14 @@
 		console.log(options);
 		var defaults = {
 			jsonrpc : null,     	// JSON RPC url
-			upd_dtm_col : null, 	// Timestamp column, used to keep track of when to "update" the column values.
+			upd_dtm_col : null, 	// Time stamp column, used to keep track of when to "update" the column values.
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
 			blockSize : 100,  		// Size of a block in rows (records).
 			blocksMax : 10,  		// Maximum number of blocks to keep at any given time.
 			pollFrequency : 10000,	// 2500 = 2.5 seconds, 1000 = 1 second
 			order_list : {},		// Current sort orders
-			filters : new Array(),  // Curent filters
-			gridName : 'grid', 		// Used to tie back to Zend_Session.  (Depreciated)
+			filters : new Array(),  // Current filters
+			gridName : 'grid', 		// Grid name used to decode column names.
 			gridLength : 0			// Length of current grid in rows or (rows + 1) if we can add rows.(Depreciated)
 		};
 
