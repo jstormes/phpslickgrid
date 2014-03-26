@@ -91,14 +91,16 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		// Get primary key column.
 		if (is_string($this->_primary)) {
-			$this->_gridConfig->primay_col = $this->_primary;
+			$this->_gridConfig->primay_col = $this->_gridName."$".$this->_primary;
+			$this->primary_col = $this->_primary;
 		}
 		
 		// Get time stamp column
 		$this->_setupMetadata();
 		foreach($this->_metadata as $Value) {
 			if ($Value['DEFAULT']=='CURRENT_TIMESTAMP') {
-				$this->_gridConfig->upd_dtm_col=$Value['COLUMN_NAME'];
+				$this->_gridConfig->upd_dtm_col=$this->_gridName."$".$Value['COLUMN_NAME'];
+				$this->upd_dtm_col = $Value['COLUMN_NAME'];
 				break;
 			}
 		}
@@ -257,20 +259,54 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * NOTE: if date created=date updated then don't return that row.
 	 * Keeps the system from jumping rows???????
 	 *
-	 * @param string updt_dtm
-	 * @param array options
+	 * @param array pollRequest
 	 * @return array
 	 */
-	public function getUpdated($updt_dtm,$options=null) {
+	public function SyncDataCache($pollRequest) {
 		//throw new Exception('Error Msg', 32001);
 		//sleep(10);
 		try {
-			//$parameters=array_merge_recursive($options,$this->parameters);
-			$res = array();
-			if (isset($updt_dtm)) {
+			$pollResponse = array();
+			
+			$pollResponse['updatedRows']= array();
+			
+			$options = $pollRequest['options'];
+			
+			
+			if (count($pollRequest['buffers'])>0) {
+			
+				foreach($pollRequest['buffers'] as $block) {
+					
+					
+					// Build select (TODO: This is the same logic as GetBlock.  Re-factor for only one version.)
+					$select = $this->buildSelect($options);
+					$select = $this->addConditionsToSelect($select);
+					$select->limit($options['blockSize'],$block*$options['blockSize']);
+						
+					// Build our order by
+					foreach($options['order_list'] as $orderby) {
+						
+						$select->order($orderby);
+					}
+					
+					$select->where($this->upd_dtm_col." > ?",$pollRequest['buffer_ldt']);
+					
+					$updated_rows = $this->fetchAll($select)->toArray();
+					
+					if (count($updated_rows)>0) {
+						foreach($updated_rows as $row)
+							array_push($pollResponse['updatedRows'], $row);
+					}
+				}
 				
+				if (count($pollResponse['updatedRows'])>0) {
+					$this->log->debug('look:');
+					$this->log->debug($pollResponse['updatedRows']);
+				}
+				
+				$this->log->debug($pollRequest);
 			}
-			return $res;
+			return $pollResponse;
 		}
 		catch (Exception $ex) {
 			throw new Exception($ex, 32001);

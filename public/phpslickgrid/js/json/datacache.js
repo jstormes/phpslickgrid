@@ -18,7 +18,7 @@
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
 			blockSize : 100,  		// Size of a block in rows (records).
 			blocksMax : 10,  		// Maximum number of blocks to keep at any given time.
-			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 10000,	// 2500 = 2.5 seconds, 1000 = 1 second
 			order_list : {},		// Current sort orders
 			filters : new Array(),  // Curent filters
 			gridName : 'grid', 		// Used to tie back to Zend_Session.  (Depreciated)
@@ -96,7 +96,7 @@
 			var newestRecord = self.options.newestRecord;
 			
 			self.activeBuffers.push(block);
-            console.log('active buffers '+self.activeBuffers);
+            //console.log('active buffers '+self.activeBuffers);
             if (self.activeBuffers.length>=self.options.blocksMax) {
 	            var toRemove=self.activeBuffers.shift(block);
 	            delete self.pages[toRemove];
@@ -104,25 +104,35 @@
 
 			self.pages[block] = new Object();
 			self.pages[block].data = data;
+			self.pages[block].updt_dtm = 0;
 
 			// Create array of updated indices
 			var indices = new Array();
 			var len = self.pages[block].data.length;
+			//console.log("record cnt "+len);
 			for ( var i = 0; i < len; i++) {
+				//console.log(self.pages[block].data[i][self.options.upd_dtm_col]);
 				indices[i] = (block * blockSize) + i;
 				// Store the date time of the newest record, we use this later
 				// to see if
 				// we need to refresh the block, column must be named updt_dtm
 				// in the db.
-				if (typeof self.pages[block].data[i][self.options.upd_dtm_col] != 'undefined')
-					if (self.pages[block].data[i][self.options.upd_dtm_col] > self.pages[block].updt_dtm)
+				
+				if (typeof self.pages[block].data[i][self.options.upd_dtm_col] != 'undefined') {
+					console.log("Updated ldt "+self.pages[block].data[i][self.options.upd_dtm_col]+" > "+self.pages[block].updt_dtm);
+					if (String(self.pages[block].data[i][self.options.upd_dtm_col]) > String(self.pages[block].updt_dtm)) {
+						console.log("Newest dt: "+self.pages[block].data[i][self.options.upd_dtm_col]);
 						self.pages[block].updt_dtm = self.pages[block].data[i][self.options.upd_dtm_col];
+					}
+				}
 
 				// primay key mapping to indices
 				self.reverseLookup["k"
 						+ self.pages[block].data[i][self.options.primay_col]] = (block * blockSize)
 						+ i;
 			}
+			//console.log(self.reverseLookup);
+			//console.log(self.pages[block].updt_dtm);
 			// Keep a record of the newest record we have seen
 			if (self.newestRecord < self.pages[block].updt_dtm)
 				self.newestRecord = self.pages[block].updt_dtm;
@@ -150,7 +160,7 @@
 				self.service.getBlock(block, self.options, {
 					'success' : function(data) {
 						getBlock(block, data);
-						console.log(block);
+						//console.log(block);
 					}
 				});
 			}
@@ -186,22 +196,55 @@
 		}
 		
 		// Setup polling for new data
-		// if we have a pollFrequency and we have an updated timestamp 
-		// column we can poll
+		// if we have a pollFrequency and we have an updated timestamp/update date time
+		// column we can poll.
 		if ((self.options.pollFrequency)&&(self.options.upd_dtm_col)) {
 			
 			
 			
-			function refresh_buffers(data) {
+			function poll_response(data) {
 				console.log("refresh_buffers(data)");
+				console.log(self.newestRecord);
 				
-				//TODO: put buffer refresh code here, mark view as dirty.
+				// Update the records in our buffers
+				var len = data['updatedRows'].length;
+				console.log(len);
+				var indices = new Array();
+				// Loop through our updated rows
+				for (var i=0;i<len;i++) {
+					console.log(data['updatedRows'][i][self.options.upd_dtm_col]);
+					// if we can lookup the slickgrid row then update it, else ignore it.
+					if (typeof self.reverseLookup["k"+data['updatedRows'][i][self.options.primay_col]]!='undefined') {
+						// get the slickgrid index (idx)
+						var idx=self.reverseLookup["k"+data['updatedRows'][i][self.options.primay_col]];
+						// Track the rows we update for later.
+						indices[i]=idx;
+						// calculate the block and offset.
+						var block=Math.floor(idx/10);
+			            var blockIdx=idx%10;
+			            // update the row in our cache
+			            self.pages[block].data[blockIdx]=data['updatedRows'][i];
+			            // update our newest record if needed.
+			            console.log(data['updatedRows'][i][self.options.upd_dtm_col]);
+			            if (String(self.newestRecord) < String(data['updatedRows'][i][self.options.upd_dtm_col])) 
+			            	self.newestRecord=data['updatedRows'][i][self.options.upd_dtm_col];			            
+					}
+				}
 				
+				// Tell all subscribers (ie slickgrid) the data change changed for this block	
+            	if (indices.length>0)
+            		onRowsChanged.notify({rows: indices}, null, self);
+            	
+            	console.log(self.newestRecord);
+            	
 				setTimeout(new_poll, self.options.pollFrequency);
 			}
 			
 			function new_poll() {
-				self.service.getUpdated(self.newestRecord,{'success':function(data) {refresh_buffers(data); },
+				
+				var pollRequest={'options':self.options,'buffers':self.activeBuffers,'buffer_ldt':self.newestRecord};
+				
+				self.service.SyncDataCache(pollRequest,{'success':function(data) {poll_response(data); },
 				'error' : function(data) {setTimeout(new_poll, self.options.pollFrequency); }, 
 				'exceptionHandler' : function(data) {setTimeout(new_poll, self.options.pollFrequency); }
 				});
