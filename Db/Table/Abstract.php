@@ -59,6 +59,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	protected $log = null;
 	
 	
+	protected $upd_dtm_col = null;
+	
+	
 	/**
 	 * Call the existing constructor then initialize our PHPSlickGrid 
 	 * properties.
@@ -266,6 +269,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		//throw new Exception('Error Msg', 32001);
 		//sleep(10);
 		try {
+			
+			$this->PollRequest($pollRequest);
+			
 			$pollResponse = array();
 			
 			$pollResponse['updatedRows']= array();
@@ -298,14 +304,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 							array_push($pollResponse['updatedRows'], $row);
 					}
 				}
-				
-				if (count($pollResponse['updatedRows'])>0) {
-					$this->log->debug('look:');
-					$this->log->debug($pollResponse['updatedRows']);
-				}
-				
-				$this->log->debug($pollRequest);
+
 			}
+			
+			$pollResponse['datalength']=$this->getLength($options);
+			
+			$pollResponse=$this->PollReply($pollResponse);
+			
 			return $pollResponse;
 		}
 		catch (Exception $ex) {
@@ -313,6 +318,33 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		}
 	}
 	
+	/**
+	 * Hook for adding data to a poll reply.
+	 * 
+	 * Thanks to Dave Davidson.
+	 *
+	 * By: jstormes Mar 27, 2014
+	 *
+	 * @param unknown $data
+	 * @return unknown
+	 */
+	private function PollReply($data) {
+		return $data;
+	}
+	
+	/**
+	 * Hook for receving data from a poll request.
+	 * 
+	 * Thanks to Dave Davidson.
+	 *
+	 * By: jstormes Mar 27, 2014
+	 *
+	 * @param unknown $data
+	 * @return unknown
+	 */
+	private function PollRequest($data) {
+		return $data;
+	}
 	
 	private function AddTableRefrence($row) {
 		
@@ -356,6 +388,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		try {
 			// Remove any tables references from column names.
 			$row = $this->RemoveTableRefrence($row);
+			
+			if ($this->upd_dtm_col !== null)
+				$row[$this->upd_dtm_col]=null;
 			
 			// Perform any updateItem logic
 			$row = $this->_updateItem($row, $options);

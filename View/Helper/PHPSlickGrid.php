@@ -148,7 +148,6 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "// Wire up row update \n";
 		$HTML .= "// ****************************************************************\n";
 		$HTML .= "{$GridName}.onCellChange.subscribe(function(e, args) {\n";
-		$HTML .= "  console.log('update');\n";
 		$HTML .= "  {$GridName}Data.updateItem(args.item); // Send updated row to server\n";
 		$HTML .= "});\n\n";
 	
