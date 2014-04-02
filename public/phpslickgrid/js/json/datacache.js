@@ -15,15 +15,19 @@
 			jsonrpc : null,     	// JSON RPC URL
 			upd_dtm_col : null, 	// Time stamp column, used to keep track of when to "update" the column values.
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
+			max_primary : null,		// Maximum primary key.
 			blockSize : 100,  		// Size of a block in rows (records).
 			blocksMax : 10,  		// Maximum number of blocks to keep at any given time.
-			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 10000,	// 2500 = 2.5 seconds, 1000 = 1 second
 			order_list : {},		// Current sort order
 			filters : new Array(),  // Current filters
 			gridName : 'grid', 		// Grid name used to decode column names.  Column names are (gridName)$(columnName)
 			gridLength : 0			// Length of current grid in rows or (rows + 1) if we can add rows.(Depreciated)
 		};
 
+		// TODO: change self.options to self.state as we want to use 
+		// this as a "object" we can pass back to server as our cache "state" 
+		
 		// Merge defaults with passed options.
 		self.options = $.extend(true, {}, defaults, options);
 		
@@ -137,6 +141,7 @@
 
 		function getItem(item) {
 
+			// easy reference for block size
 			var blockSize = self.options.blockSize;
 			// currentPage = the currently requested page block
 			var block = Math.floor(item / blockSize);
@@ -191,6 +196,19 @@
 		// column we can poll.
 		if ((self.options.pollFrequency)&&(self.options.upd_dtm_col)) {
 			
+			function updated_cell(original_row,new_row) {
+				//var rows = new Array();
+				var columns = new Array();
+				for (propName in original_row) {
+					if (new_row.hasOwnProperty(propName)) {
+						if (original_row[propName]!=new_row[propName]) {
+							columns.push(propName);
+						}
+					}
+				}
+				return columns;
+			}
+			
 			function buffer_update(data) {
 				
 				// Update the records in our buffers
@@ -198,7 +216,7 @@
 				var indices = new Array();
 				// Loop through our updated rows
 				for (var i=0;i<len;i++) {
-					
+					data['updatedCells'] = new Array();
 					// if we can lookup the slickgrid row then update it, else ignore it.
 					if (typeof self.reverseLookup["k"+data['updatedRows'][i][self.options.primay_col]]!='undefined') {
 						// get the slickgrid index (idx)
@@ -206,10 +224,31 @@
 						// Track the rows we update for later.
 						indices[i]=idx;
 						// calculate the block and offset.
-						var block=Math.floor(idx/10);
-			            var blockIdx=idx%10;
+						//var block=Math.floor(idx/10);
+			            //var blockIdx=idx%10;
+						
+						// TODO: Refactor the next few lines into functions
+						// easy reference for block size
+						var blockSize = self.options.blockSize;
+						// currentPage = the currently requested page block
+						var block = Math.floor(idx / blockSize);
+						// index of the item requested in the current block
+						var blockIdx = idx % blockSize;
+						
+						
 			            // update the row in our cache
-			            self.pages[block].data[blockIdx]=data['updatedRows'][i];
+			            // find the updated cell
+			            //console.log(idx);
+						
+						//TODO: Refactor this?
+			            data['updatedCells'].push({idx:idx, columns:updated_cell(self.pages[block].data[blockIdx],data['updatedRows'][i])});
+			            //console.log(updated_cell(self.pages[block].data[blockIdx],data['updatedRows'][i]));
+			            //console.log(self.pages[block].data[blockIdx]);
+			            
+			            // Make sure we don't run off the end of a block 
+			            // due to deletes or un-deletes.
+			            if (typeof(self.pages[block]!='undefined'))
+			            	self.pages[block].data[blockIdx]=data['updatedRows'][i];
 			            // update our newest record if needed.
 			            if (String(self.newestRecord) < String(data['updatedRows'][i][self.options.upd_dtm_col])) 
 			            	self.newestRecord=data['updatedRows'][i][self.options.upd_dtm_col];			            
@@ -223,12 +262,40 @@
 			
 			function length_update(data) {			
 				if (self.datalength!=data['datalength']) {
-					self.datalength=data['datalength'];
-					self.lengthdate = new Date();
+					
 					
 					// TODO: If we have the last block in the buffer, 
 					// add the new record to it, or add a new block if that
 					// block is full.
+					
+					// Is the last block in buffer?
+					// Calculate the block number of the last block
+					
+					// easy reference for block size
+					var blockSize = self.options.blockSize;
+					var lastBlock=Math.floor(self.datalength/blockSize);
+					
+					// TODO: REfactor this so that Updated records are passed back.
+					// Loop through active blocks 
+					var activeBufferCnt = self.activeBuffers.length;
+					for (var i=0; i<activeBufferCnt; i++) {
+						// if active block blocks include the last block
+						if (self.activeBuffers[i]==lastBlock)
+							// update entire last block
+							console.log("update block");
+						
+							self.pages[lastBlock] = new Object();
+							self.pages[lastBlock].data = new Array();
+							self.service.getBlock(lastBlock, self.options, {
+								'success' : function(data) {
+									getBlock(lastBlock, data);
+								}
+							});
+					}
+					console.log(data);
+					
+					self.datalength=data['datalength'];
+					self.lengthdate = new Date();
 					
 					onRowCountChanged.notify();
 				}
@@ -237,26 +304,43 @@
 			// Poll controller
 			// This function takes the reply from the server and passes 
 			// it off to each action that might need to act on that reply.
+			// TODO: Rename to Sync_Controller
 			function poll_response(data) {
 				
+				// TODO: Rename to lengthAction(data);
 				length_update(data);
 				
+				// TODO: Rename to buffersAction(data);
 				buffer_update(data);
 				
+				// TODO: addAction(data);
+				
+				// TODO: deleteAction(data);
+				
+				//if (typeof(data['updatedCells'])!='undefined')
+				//	console.log(data['updatedCells']);
+				
+				//console.log('notifying');
+				
+				// TODO: Rename to notifyAction(data);
 				onPollReply.notify(data);
             	
 				setTimeout(poll_request, self.options.pollFrequency);
 			}
 			
+			// TODO: Rename to Sync_Failed and add data and error tracking
 			function poll_fail() {
 				setTimeout(poll_request, self.options.pollFrequency);
 			}
 			
+			
+			// TODO: Rename to SyncRequest()
 			function poll_request() {
 				
 				var pollRequest={'options':self.options,'buffers':self.activeBuffers,'buffer_ldt':self.newestRecord};
 				
 				// TODO: Add the data from addPollRequestData data.
+				
 				
 				self.service.SyncDataCache(pollRequest,{'success':function(data) {poll_response(data); },
 				'error' : function(data) {poll_fail(); }, 
@@ -268,7 +352,12 @@
 			poll_request();
 		}
 		
+		// TODO: Change to SyncInjectData($data)
 		function addPollRequestData($data) {
+			// TODO: Add stuff
+		}
+		
+		function forceSync() {
 			
 		}
 

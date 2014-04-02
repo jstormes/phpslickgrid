@@ -58,8 +58,19 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	protected $log = null;
 	
-	
+	/**
+	 * Column to track row updates
+	 * 
+	 * @var string
+	 */
 	protected $upd_dtm_col = null;
+	
+	/**
+	 * Column to track row deletes
+	 * 
+	 * @var string
+	 */
+	protected $deleted_col = null;
 	
 	
 	/**
@@ -278,6 +289,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			
 			$options = $pollRequest['options'];
 			
+			// Calculate block size for block and the end of length
+			// so we can send new records vs updated records.
+			
 			
 			if (count($pollRequest['buffers'])>0) {
 			
@@ -308,6 +322,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			}
 			
 			$pollResponse['datalength']=$this->getLength($options);
+			//if ($pollResponse['datalength']>$pollRequest['options'])
 			
 			$pollResponse=$this->PollReply($pollResponse);
 			
@@ -333,7 +348,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	/**
-	 * Hook for receving data from a poll request.
+	 * Hook for receiving data from a poll request.
 	 * 
 	 * Thanks to Dave Davidson.
 	 *
