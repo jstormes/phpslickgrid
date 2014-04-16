@@ -67,6 +67,9 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		// Render any needed Dynamic Java Script:
 		$HTML .= $this->DynamicJS();
 		
+		
+		//$HTML .= "    {$GridName}.render();\n";
+		
 		$HTML .= "</script>\n";
 		return $HTML;
 	}

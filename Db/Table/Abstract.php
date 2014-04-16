@@ -124,7 +124,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$this->_gridInit();
 		
-		$this->_gridConfig->gridLength = $this->getLength(array());
+		$grid_length = $this->getLength(array());
+		$this->_gridConfig->gridLength = $grid_length['gridLength']; // filtered row count
+		$this->_gridConfig->totalRows = $grid_length['totalRows']; // unfiltered row count
+		$this->_gridConfig->maxPrimary = $this->getMaxPrimary(); // unfiltered row count
 		
 	}
 	
@@ -183,7 +186,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	
-	public function buildSelect($options) {
+	public function buildSelect($state=null) {
 		
 		$info=$this->info();
 		
@@ -206,29 +209,38 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		return $select;
 	}
 	
-	public function getLength($options) {
+	public function getLength($state=null) {
 
 		try
-		{
-			// Merge javascript options with php parameters.
-			//$parameters=array_merge_recursive($options);
+		{	
+			$Res = array();
 			
-			$select = $this->buildSelect($options);
-			
+			// Get row count for grid
+			$select = $this->buildSelect($state);
 			$select = $this->addConditionsToSelect($select);
-			//$this->createWhere($select, $options['where_list']);
-			//$this->log->debug($select." ");
 			
+			// Apply user filters
+			//$select = $this->addFilters($select, $state);
 			
 			$count_select = $this->select();
 			$count_select->setIntegrityCheck(false);
 			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
-					
+			$row = $this->fetchRow($count_select);
+			$Res['gridLength'] = $row->num;
+			
+			// Get total possible rows
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
+			$row = $this->fetchRow($count_select);
+			$Res['totalRows'] = $row->num;
+			
 			/*
-			 * Return the count of records
+			 * Return the counts
 			 */
-			$Res = $this->fetchRow($count_select);
-			return $Res->num;
+			return $Res;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
@@ -236,7 +248,34 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 	}
 	
-	public function getBlock($block,$options) {
+	public function getMaxPrimary($state=null) {
+		try
+		{
+			// Get Maximum primary key value
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+				
+			// Apply user filters
+			//$select = $this->addFilters($select, $state);
+				
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(".$this->_gridConfig->primay_col.") as num");
+			$row = $this->fetchRow($count_select);
+			
+			return $row->num;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	}
+	
+	public function LimitSelectToMaxPrimary(Zend_Db_Select $select, $state) {
+		$select->where($this->primary_col."<= ?", $state['maxPrimary']);
+		return $select;
+	}
+	
+	public function getBlock($block,$state) {
 		
 		try
 		{
@@ -244,12 +283,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
-			$select = $this->buildSelect($options);
+			$select = $this->buildSelect($state);
 			$select = $this->addConditionsToSelect($select);
-			$select->limit($options['blockSize'],$block*$options['blockSize']);
+			$select = $this->LimitSelectToMaxPrimary($select, $state);
+			$select->limit($state['blockSize'],$block*$state['blockSize']);
 			
 			// Build our order by
-			foreach($options['order_list'] as $orderby) {
+			foreach($state['order_list'] as $orderby) {
 				$select->order($orderby);
 			}
 			
@@ -266,6 +306,43 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 
 	}
 	
+	public function LimitSelectToNewRecords(Zend_Db_Select $select, $state) {
+		$select->where($this->primary_col."> ?", $state['maxPrimary']);
+		return $select;
+	}
+	
+	public function getNewBlock($block,$state) {
+	
+		try
+		{
+			//return array();
+			// Merge javascript options with php parameters.
+			//$parameters=array_merge_recursive($options,$this->parameters);
+				
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			$select = $this->LimitSelectToNewRecords($select, $state);
+			$select->limit($state['blockSize'],$block*$state['blockSize']);
+				
+			// ****** No order by for new records ********
+			// Build our order by
+			//foreach($state['order_list'] as $orderby) {
+			//	$select->order($orderby);
+			//}
+				
+			/*
+			 * Explode the results into row[Index][Table Name][Column] format
+			*/
+			$Results = $this->fetchAll($select)->toArray();
+	
+			return ($Results);
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	
+	}
+	
 	/**
 	 * return the primary keys of all rows that are newer than
 	 * the passed date.
@@ -276,40 +353,42 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @param array pollRequest
 	 * @return array
 	 */
-	public function SyncDataCache($pollRequest) {
+	public function SyncDataCache($state) {
 		//throw new Exception('Error Msg', 32001);
 		//sleep(10);
 		try {
 			
-			$this->PollRequest($pollRequest);
+			if ($state==null)
+				return null;
+			
+			$this->PollRequest($state);
 			
 			$pollResponse = array();
 			
 			$pollResponse['updatedRows']= array();
 			
-			$options = $pollRequest['options'];
 			
 			// Calculate block size for block and the end of length
 			// so we can send new records vs updated records.
 			
 			
-			if (count($pollRequest['buffers'])>0) {
+			if (count($state['activeBuffers'])>0) {
 			
-				foreach($pollRequest['buffers'] as $block) {
+				foreach($state['activeBuffers'] as $block) {
 					
 					
 					// Build select (TODO: This is the same logic as GetBlock.  Re-factor for only one version.)
-					$select = $this->buildSelect($options);
+					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
-					$select->limit($options['blockSize'],$block*$options['blockSize']);
+					$select->limit($state['blockSize'],$block*$state['blockSize']);
 						
 					// Build our order by
-					foreach($options['order_list'] as $orderby) {
+					foreach($state['order_list'] as $orderby) {
 						
 						$select->order($orderby);
 					}
 					
-					$select->where($this->upd_dtm_col." > ?",$pollRequest['buffer_ldt']);
+					$select->where($this->upd_dtm_col." > ?",$state['newestRecord']);
 					
 					$updated_rows = $this->fetchAll($select)->toArray();
 					
@@ -321,7 +400,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 
 			}
 			
-			$pollResponse['datalength']=$this->getLength($options);
+			$pollResponse['datalength']=$this->getLength($state);
 			//if ($pollResponse['datalength']>$pollRequest['options'])
 			
 			$pollResponse=$this->PollReply($pollResponse);
@@ -387,7 +466,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		return $Row;
 	}
 	
-	public function _updateItem($row, $options) {
+	public function _updateItem($row, $state) {
 		return $row;
 	}
 	
@@ -396,10 +475,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 *
 	 * @param  array $row
 	 * @param  array $options
-	 * @return null
+	 * @return array
 	 */
-	public function updateItem($updt_dtm, $row, $options=null) {
-		
+	public function updateItem($row, $state=null) {
+
 		try {
 			// Remove any tables references from column names.
 			$row = $this->RemoveTableRefrence($row);
@@ -408,7 +487,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$row[$this->upd_dtm_col]=null;
 			
 			// Perform any updateItem logic
-			$row = $this->_updateItem($row, $options);
+			$row = $this->_updateItem($row, $state);
 			if ($row===null) return null;  // if null update logic short circuited update.
 			
 			// Find the exiting Row in the database to update
@@ -426,7 +505,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$Row->save();
 	
 			// return any rows updated from the last time this was called.
-			return $this->getUpdated($updt_dtm,$options);
+			return $this->SyncDataCache($state);
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
@@ -435,7 +514,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	
-	public function _addItem($row,$options) {
+	public function _addItem($row,$state) {
 		return $row;
 	}
 	
@@ -446,14 +525,14 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @param  array $options
 	 * @return null
 	 */
-	public function addItem($row,$options=null) {
+	public function addItem($row,$state=null) {
 		
 		try {
 			// Remove any tables references from column names.
 			$row=$this->RemoveTableRefrence($row);
 			
 			// Perform any custom addItem logic
-			$row=$this->_addItem($row,$options);
+			$row=$this->_addItem($row,$state);
 			if ($row===null) return null;  	// if custom add logic returns null,
 											// it handled the add.
 				
@@ -472,7 +551,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$NewRow->save();
 			
 			// Pass the new row array back to javascript.
-			return $row;
+			return $this->SyncDataCache($state);
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
@@ -492,14 +571,14 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @param  array $options
 	 * @return null
 	 */
-	public function deleteItem($row, $options=null) {
+	public function deleteItem($row, $state=null) {
 		//sleep(5); // Simulate a slow reply
 		try {
 			// Remove any tables references from column names.
 			$row = $this->RemoveTableRefrence($row);
 			
 			// Perform any custom deleteItem logic
-			$row=$this->_deleteItem($row,$options);
+			$row=$this->_deleteItem($row,$state);
 			if ($row===null) return null;  	// if custom delete logic returns null,
 											// it handled the delete.
 			
@@ -507,7 +586,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$Row=$this->find($row[$this->_primary[1]])->current();
 			$Row->delete();
 	
-			return null;
+			return $this->SyncDataCache($state);
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
