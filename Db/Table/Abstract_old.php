@@ -213,9 +213,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 
 		try
 		{	
-			//$Res = array();
-			
-			$state_update = array();
+			$Res = array();
 			
 			// Get row count for grid
 			$select = $this->buildSelect($state);
@@ -228,7 +226,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$count_select->setIntegrityCheck(false);
 			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
 			$row = $this->fetchRow($count_select);
-			$state_update['gridLength'] = $row->num;
+			$Res['gridLength'] = $row->num;
 			
 			// Get total possible rows
 			$select = $this->buildSelect($state);
@@ -237,12 +235,12 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$count_select->setIntegrityCheck(false);
 			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
 			$row = $this->fetchRow($count_select);
-			$state_update['totalRows'] = $row->num;
+			$Res['totalRows'] = $row->num;
 			
 			/*
-			 * Return updates to the state
+			 * Return the counts
 			 */
-			return $state_update;
+			return $Res;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
@@ -272,10 +270,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		}
 	}
 	
-	//public function LimitSelectToMaxPrimary(Zend_Db_Select $select, $state) {
-	//	$select->where($this->primary_col."<= ?", $state['maxPrimary']);
-	//	return $select;
-	//}
+	public function LimitSelectToMaxPrimary(Zend_Db_Select $select, $state) {
+		$select->where($this->primary_col."<= ?", $state['maxPrimary']);
+		return $select;
+	}
 	
 	public function getBlock($block,$state) {
 		
@@ -285,20 +283,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
-			$this->log->debug($block);
-			
 			$select = $this->buildSelect($state);
 			$select = $this->addConditionsToSelect($select);
-			if ($block[0]=='t') {
-				$block = substr($block, 1);
-				$select->where($this->primary_col."<= ?", $state['maxPrimary']);
-				$select->limit($state['blockSize'],$block*$state['blockSize']);
-			}
-			else {
-				$block = substr($block, 1);
-				$select->where($this->primary_col."> ?", $state['maxPrimary']);
-				$select->limit($state['blockSize'],$block*$state['blockSize']);
-			}
+			$select = $this->LimitSelectToMaxPrimary($select, $state);
+			$select->limit($state['blockSize'],$block*$state['blockSize']);
 			
 			// Build our order by
 			foreach($state['order_list'] as $orderby) {
