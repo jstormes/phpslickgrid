@@ -111,6 +111,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$GridName = $this->Table->getGridName();
 		
 		$HTML  = "{$GridName}Data.onRowsChanged.subscribe(function (e, args) { \n";
+		$HTML .= "    console.log('updating rows '+args.rows);\n";
     	$HTML .= "    {$GridName}.invalidateRows(args.rows);\n";
     	$HTML .= "    {$GridName}.render();\n";
 		$HTML .= "});\n\n";

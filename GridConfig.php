@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * In esiance this is the grid and cache "state"
+ * 
+ * 
+ * @author jstormes
+ *
+ */
 class PHPSlickGrid_GridConfig {
 
     public $data       = array();

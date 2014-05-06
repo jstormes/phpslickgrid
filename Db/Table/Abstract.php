@@ -24,6 +24,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	protected $_columnConfig = null;
 	
 	/**
+	 * State of the data cache.
+	 * 
+	 * @var array
+	 */
+	protected $state = array();
+	
+	/**
 	 * Table used to store meta data about columns 
 	 * 
 	 * @var unknown
@@ -124,16 +131,117 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$this->_gridInit();
 		
-		$grid_length = $this->getLength(array());
-		$this->_gridConfig->gridLength = $grid_length['gridLength']; // filtered row count
-		$this->_gridConfig->totalRows = $grid_length['totalRows']; // unfiltered row count
-		$this->_gridConfig->maxPrimary = $this->getMaxPrimary(); // unfiltered row count
+		//$grid_length = $this->getLength(array());
 		
+		// Prime the state.  Make this more formal.  Change _gridConfig to _inital_state!!!!!
+		// Make propery/index names match from php to js!!!!
+		$this->initState();
+		$this->_gridConfig->gridLength       = $this->getLength();      // filtered row count
+		$this->_gridConfig->sortedLength     = $this->getLength();      // filtered row count
+		$this->_gridConfig->totalRows        = $this->getTotalLenth();  // un-filtered row count
+		$this->_gridConfig->maxPrimary       = $this->getMaxPrimary();  // filtered max primary key
+		$this->_gridConfig->sortedMaxPrimary = $this->getMaxPrimary();  // filtered max primary key
+		$this->_gridConfig->maxDateTime      = $this->getMaxDateTime(); // filtered max date time
+		
+	}
+	
+	protected function initState() {
+		//$this->state['gridLength']=0;
+		//$this->state['totalRows']=0;
+		//$this->state['maxPrimary']=0;
+		//$this->state['max_dt']='0';
 	}
 	
 	protected function _gridInit() {
 		
+	}
+	
+	public function getMaxPrimary($state=null) {
+		try
+		{
+			// Get total possible rows
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			
+			// Apply user filters
+			//$select = $this->addFilters($select, $state);
+			
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridConfig->primay_col}) as num");
+			$row = $this->fetchRow($count_select);
+			return $row->num;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	}
+	
+	public function getMaxDateTime($state=null) {
+		try
+		{
+			// Get total possible rows
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			
+			// Apply user filters
+			//$select = $this->addFilters($select, $state);
+			
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridConfig->upd_dtm_col}) as num");
+			$row = $this->fetchRow($count_select);
+			return $row->num;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	}
+	
+	public function getTotalLenth($state=null) {
+		try
+		{
+			// Get total possible rows
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
+			$row = $this->fetchRow($count_select);
+			return $row->num;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
 		
+	}
+	
+	public function getLength($state=null) {
+	
+		try
+		{
+			//$Res = array();
+				
+			$state_update = array();
+				
+			// Get row count for grid
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+				
+			// Apply user filters
+			//$select = $this->addFilters($select, $state);
+				
+			$count_select = $this->select();
+			$count_select->setIntegrityCheck(false);
+			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
+			$row = $this->fetchRow($count_select);
+			return $row->num;
+
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	
 	}
 	
 	/**
@@ -209,68 +317,29 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		return $select;
 	}
 	
-	public function getLength($state=null) {
-
-		try
-		{	
-			//$Res = array();
-			
-			$state_update = array();
-			
-			// Get row count for grid
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			
-			// Apply user filters
-			//$select = $this->addFilters($select, $state);
-			
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
-			$row = $this->fetchRow($count_select);
-			$state_update['gridLength'] = $row->num;
-			
-			// Get total possible rows
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
-			$row = $this->fetchRow($count_select);
-			$state_update['totalRows'] = $row->num;
-			
-			/*
-			 * Return updates to the state
-			 */
-			return $state_update;
-		}
-		catch (Exception $ex) { // push the exception code into JSON range.
-			throw new Exception($ex, 32001);
-		}
-		
-	}
 	
-	public function getMaxPrimary($state=null) {
-		try
-		{
-			// Get Maximum primary key value
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
+	
+// 	public function getMaxPrimary($state=null) {
+// 		try
+// 		{
+// 			// Get Maximum primary key value
+// 			$select = $this->buildSelect($state);
+// 			$select = $this->addConditionsToSelect($select);
 				
-			// Apply user filters
-			//$select = $this->addFilters($select, $state);
+// 			// Apply user filters
+// 			//$select = $this->addFilters($select, $state);
 				
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(".$this->_gridConfig->primay_col.") as num");
-			$row = $this->fetchRow($count_select);
+// 			$count_select = $this->select();
+// 			$count_select->setIntegrityCheck(false);
+// 			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(".$this->_gridConfig->primay_col.") as num");
+// 			$row = $this->fetchRow($count_select);
 			
-			return $row->num;
-		}
-		catch (Exception $ex) { // push the exception code into JSON range.
-			throw new Exception($ex, 32001);
-		}
-	}
+// 			return $row->num;
+// 		}
+// 		catch (Exception $ex) { // push the exception code into JSON range.
+// 			throw new Exception($ex, 32001);
+// 		}
+// 	}
 	
 	//public function LimitSelectToMaxPrimary(Zend_Db_Select $select, $state) {
 	//	$select->where($this->primary_col."<= ?", $state['maxPrimary']);
@@ -285,7 +354,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
-			$this->log->debug($block);
+			
 			
 			$select = $this->buildSelect($state);
 			$select = $this->addConditionsToSelect($select);
@@ -377,45 +446,15 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			
 			$pollResponse = array();
 			
-			$pollResponse['updatedRows']= array();
-			
-			
-			// Calculate block size for block and the end of length
-			// so we can send new records vs updated records.
-			
-			
-			if (count($state['activeBuffers'])>0) {
-			
-				foreach($state['activeBuffers'] as $block) {
-					
-					
-					// Build select (TODO: This is the same logic as GetBlock.  Re-factor for only one version.)
-					$select = $this->buildSelect($state);
-					$select = $this->addConditionsToSelect($select);
-					$select->limit($state['blockSize'],$block*$state['blockSize']);
-						
-					// Build our order by
-					foreach($state['order_list'] as $orderby) {
-						
-						$select->order($orderby);
-					}
-					
-					$select->where($this->upd_dtm_col." > ?",$state['newestRecord']);
-					
-					$updated_rows = $this->fetchAll($select)->toArray();
-					
-					if (count($updated_rows)>0) {
-						foreach($updated_rows as $row)
-							array_push($pollResponse['updatedRows'], $row);
-					}
-				}
-
-			}
-			
+			$select = $this->buildSelect($state);
+			$select = $this->addConditionsToSelect($select);
+			// updated by date time
+			$select->where($this->upd_dtm_col." > ?",$state['newestRecord']);
+			// Order by upd_dtm_col
+			// limit to buffersize
+			$pollResponse['updatedRows'] = $this->fetchAll($select)->toArray();			
 			$pollResponse['datalength']=$this->getLength($state);
-			//if ($pollResponse['datalength']>$pollRequest['options'])
 			
-			$pollResponse=$this->PollReply($pollResponse);
 			
 			return $pollResponse;
 		}
