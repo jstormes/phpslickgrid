@@ -355,7 +355,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			
 			
-			
+			// TODO: Corner case where we are at the end of the sorted block,
+			// look for the next rows, sort by primary key for consistancy.
+			// IF record count < block length then pad out with select with 
+			// order by primary key.
 			$select = $this->buildSelect($state);
 			$select = $this->addConditionsToSelect($select);
 			if ($block[0]=='t') {
@@ -438,7 +441,16 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		//throw new Exception('Error Msg', 32001);
 		//sleep(10);
 		try {
+			/* Basic logic:
+			 * Get all records > maxPrimary and all records
+			 * where Update Date Time > maxDateTime
+			 * 
+			 * IDEA!:
+			 * By default andy new record IE > maxPrimary
+			 * will have a update date time > maxDateTime!!!!!
+			 */
 			
+			// TODO: Include records > maxPrimary.
 			if ($state==null)
 				return null;
 			

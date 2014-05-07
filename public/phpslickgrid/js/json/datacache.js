@@ -175,6 +175,7 @@
 			
 			var block_offset = (block.slice(1) * self.state.blockSize);
 			
+			// TODO: Change from top bottom buffers to looking at the primary key!!!!
 			if (block.charAt(0)=='t') {
 				
 				
@@ -247,6 +248,8 @@
 		function getItem(row) {
 			console.log("getting Row "+row);
 
+			// TODO: Switch from top bottom to sorted length
+			// if row is greater than sorted length do reverse lookup.
 			var offset_row 	= row;		// Default to top row offset.
 			var type 		= 't';	// Default to top buffers.
 			
