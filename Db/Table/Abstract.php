@@ -131,6 +131,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$this->_gridInit();
 		
+		//TODO: Don't call all of this crap for call backs.
+		
 		//$grid_length = $this->getLength(array());
 		
 		// Prime the state.  Make this more formal.  Change _gridConfig to _inital_state!!!!!
@@ -353,34 +355,59 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			//return array();
 			// Merge javascript options with php parameters.
 			//$parameters=array_merge_recursive($options,$this->parameters);
+			$Results=array();
 			
-			
-			// TODO: Corner case where we are at the end of the sorted block,
-			// look for the next rows, sort by primary key for consistancy.
-			// IF record count < block length then pad out with select with 
-			// order by primary key.
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			if ($block[0]=='t') {
-				$block = substr($block, 1);
-				$select->where($this->primary_col."<= ?", $state['maxPrimary']);
+			if ($block <= (floor($state['sortedLength'] / $state['blockSize']))) {
+				// Corner case where we are at the end of the sorted block,
+				// look for the next rows, sort by primary key for consistancy.
+				// IF record count < block length then pad out with select with 
+				// order by primary key.
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+	
+				$this->log->debug("MaxPrimary");
+				$this->log->debug($state['sortedMaxPrimary']);
+				
+				$select->where($this->primary_col."<= ?", $state['sortedMaxPrimary']);
 				$select->limit($state['blockSize'],$block*$state['blockSize']);
+				// Build our order by
+				foreach($state['order_list'] as $orderby) {
+					$select->order($orderby);
+				}
+				
+				$Results = $this->fetchAll($select)->toArray();
+				
+				if (count($Results)<$state['blockSize']) {
+					$select = $this->buildSelect($state);
+					$select = $this->addConditionsToSelect($select);
+					$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+					$select->limit($state['blockSize']-count($Results),0);
+					
+					// Order by primary
+					//$select->order($orderby);
+					
+					$Results += $this->fetchAll($select)->toArray();
+				}
 			}
 			else {
-				$block = substr($block, 1);
-				$select->where($this->primary_col."> ?", $state['maxPrimary']);
-				$select->limit($state['blockSize'],$block*$state['blockSize']);
+				// Get unsorted block
+				//	$block = substr($block, 1);
+				//	$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+				//	$select->limit($state['blockSize'],$block*$state['blockSize']);
+				
+				// Order by primary
+				//$select->order($orderby);
 			}
 			
-			// Build our order by
-			foreach($state['order_list'] as $orderby) {
-				$select->order($orderby);
-			}
+			
+			
+			
+			
 			
 			/*
 			 * Explode the results into row[Index][Table Name][Column] format
 			*/
-			$Results = $this->fetchAll($select)->toArray();
+			//$Results = $this->fetchAll($select)->toArray();
 
 			return ($Results);
 		}

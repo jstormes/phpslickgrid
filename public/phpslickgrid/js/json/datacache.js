@@ -56,6 +56,8 @@
 		
 		var self = this;
 		
+		// TODO: for blockSize, look in slickgird.js at resizeCanvas and make blockSize 
+		// slightly bigger than numVisibleRows.
 		var default_state = {
 				jsonrpc : null,     	// JSON RPC URL
 				upd_dtm_col : null, 	// Time stamp column, used to keep track of when to "update" the column values.
@@ -157,8 +159,8 @@
 		
 		function getBlock(block, data) {
 			
-			console.log("Processing Block "+block);
-			console.log(data);
+			//console.log("Processing Block "+block);
+			//console.log(data);
 			
 			// Maintain our buffer size limit
 			self.state.active_buffers.push(block);
@@ -173,31 +175,41 @@
 			// Create array of updated indices
 			var indices = new Array();
 			
-			var block_offset = (block.slice(1) * self.state.blockSize);
+			//var block_offset = (block.slice(1) * self.state.blockSize);
 			
 			// TODO: Change from top bottom buffers to looking at the primary key!!!!
-			if (block.charAt(0)=='t') {
+			
 				
 				
-				console.log("block_offset "+block_offset);
-				console.log(self.pages[block]);
+				console.log("block_offset "+block);
+				//console.log(self.pages[block]);
 				
 				var len = self.pages[block].data.length;
 				
 				console.log("block length "+len);
 				for ( var i = 0; i < len; i++) {
-					// Track changed rows.
-					indices.push( block_offset + i );
 					
-					// Update time/date of the newest item seen.
-					if (typeof self.pages[block].data[i][self.state.upd_dtm_col] != 'undefined') 
-						if (String(self.pages[block].data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
-							self.state.newestRecord = self.pages[block].data[i][self.state.upd_dtm_col];
+					if (((block*self.state.blockSize) + i) < self.state.sortedLength) {
+						// Track changed rows.
+						indices.push( (block*self.state.blockSize) + i );
+						
+						// Update time/date of the newest item seen.
+						if (typeof self.pages[block].data[i][self.state.upd_dtm_col] != 'undefined') 
+							if (String(self.pages[block].data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
+								self.state.newestRecord = self.pages[block].data[i][self.state.upd_dtm_col];
 
-					// primary key mapping to row self.reverseLookup["k"+primary_key_value]=row
-					self.reverseLookup["k" + self.pages[block].data[i][self.state.primay_col]] = block_offset + i;
+						// primary key mapping to row self.reverseLookup["k"+primary_key_value]=row
+						self.reverseLookup["k" + self.pages[block].data[i][self.state.primay_col]] = block + i;
+					}
+					else {
+						// If primary is > maxPrimary add to reverse lookup, increase gridLenth
+						
+						// 
+						
+					}
+					
 				}
-			}
+			
 //			else {
 //				var block_offset = (block.slice(1) * self.state.blockSize) + i + self.state.top_length;
 //				
@@ -235,8 +247,8 @@
 //			}
 //			console.log(self.state.newestRecord);
 			
-			console.log("Rows to update");
-			console.log(indices);
+			//console.log("Rows to update");
+			//console.log(indices);
 
 			// Tell all subscribers (ie slickgrid) the data change changed for
 			// this block
@@ -246,32 +258,23 @@
 		}
 		
 		function getItem(row) {
-			console.log("getting Row "+row);
+			//console.log("getting Row "+row);
 
 			// TODO: Switch from top bottom to sorted length
 			// if row is greater than sorted length do reverse lookup.
-			var offset_row 	= row;		// Default to top row offset.
-			var type 		= 't';	// Default to top buffers.
-			
-			// If row was created after our last sort/refresh
-			// switch to bottom buffers.
-			if (row >= self.state.top_length) {
-				// Calculate the bottom buffer
-				offset_row = row - self.state.top_length;
-				type = 'b';
-			}
+
 					
-			var block = type+(Math.floor(offset_row / self.state.blockSize));
-			var idx = offset_row % self.state.blockSize;
+			var block = Math.floor(row / self.state.blockSize);
+			var idx = row % self.state.blockSize;
 			
-			console.log("in Block "+block );
+			//console.log("in Block "+block );
 						
 			
 			
 			// if we don't have the requested block, send AJAX request for it.
 			// Send only one request per block.
 			if (typeof self.pages[block] == 'undefined') {
-				console.log("Getting Block "+block);
+				//console.log("Getting Block "+block);
 				self.pages[block] = new Object();
 				self.pages[block].data = new Array();
 				self.service.getBlock(block, self.state, {
