@@ -415,11 +415,11 @@
 
 				console.log("sync");
 				console.log(data);
-				updateLength(data);
+//				updateLength(data);
 
-				updateBuffers(data);
+//				updateBuffers(data);
 								
-				setTimeout(SyncRequest, self.state.pollFrequency);
+//				setTimeout(SyncRequest, self.state.pollFrequency);
 			}
 			
 			function SyncFailed(data) {
