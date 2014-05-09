@@ -357,6 +357,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			//$parameters=array_merge_recursive($options,$this->parameters);
 			$Results=array();
 			
+			// Get sorted block.
 			if ($block <= (floor($state['sortedLength'] / $state['blockSize']))) {
 				// Corner case where we are at the end of the sorted block,
 				// look for the next rows, sort by primary key for consistancy.
@@ -364,9 +365,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				// order by primary key.
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
-	
-				$this->log->debug("MaxPrimary");
-				$this->log->debug($state['sortedMaxPrimary']);
 				
 				$select->where($this->primary_col."<= ?", $state['sortedMaxPrimary']);
 				$select->limit($state['blockSize'],$block*$state['blockSize']);
@@ -377,26 +375,41 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				
 				$Results = $this->fetchAll($select)->toArray();
 				
+				// If we get less than a full block
+				// see if we have any unsorted rows to pad out
+				// the block.
 				if (count($Results)<$state['blockSize']) {
+					$this->log->debug("Getting unsorted block");
 					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
 					$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
 					$select->limit($state['blockSize']-count($Results),0);
 					
 					// Order by primary
-					//$select->order($orderby);
+					$select->order(array($this->primary_col));
 					
-					$Results += $this->fetchAll($select)->toArray();
+					$UnsortedResults = $this->fetchAll($select)->toArray();
+					
+					foreach($UnsortedResults as $row)
+						array_push($Results, $row);
+
 				}
 			}
 			else {
 				// Get unsorted block
-				//	$block = substr($block, 1);
-				//	$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
-				//	$select->limit($state['blockSize'],$block*$state['blockSize']);
+				// Calculate offset:
+				$offset = ($state['sortedLength'] % $state['blockSize']);
+				
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+				$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+				$select->limit($state['blockSize'],($block*$state['blockSize'])+$offset);
 				
 				// Order by primary
-				//$select->order($orderby);
+				$select->order(array($this->primary_col));
+				
+				$Results = $this->fetchAll($select)->toArray();
+
 			}
 			
 			

@@ -77,6 +77,9 @@
 				active_buffers : []		// Array of active buffers
 			};
 		
+		self.data = new Array();
+		var bufferSize = 10;
+		
 		// Prime the state default state + inital state from server.
 		self.state = $.extend(true, {}, default_state, inital_state);
 		
@@ -90,7 +93,7 @@
 		// events
 		var onRowCountChanged = new Slick.Event();
 		var onRowsChanged = new Slick.Event();
-		var onSync = new Slick.Event();
+	//	var onSync = new Slick.Event();
 		var onRowTotalCountChanged = new Slick.Event();
 		
 		// Pages of our data
@@ -161,11 +164,22 @@
 			
 			//console.log("Processing Block "+block);
 			//console.log(data);
+			/*
+			 * Three arrays, note "k"+ forces sparse array.
+			 * data["k"+row] = item;
+			 * reverseLookup["k"+item['primary_key]] = row;
+			 * stack[] = push(row);  // Rows in memory free oldest after X rows in array;
+			 * 
+			 * 
+			 */
 			
 			// Maintain our buffer size limit
 			self.state.active_buffers.push(block);
             if (self.state.active_buffers.length>=self.state.blocksMax) {
 	            var toRemove=self.state.active_buffers.shift(block);
+	            var len = self.pages[toRemove].data.length;
+	            for ( var i = 0; i < len; i++) 
+	            	delete self.reverseLookup["k" + self.pages[toRemove].data[i][self.state.primay_col]];
 	            delete self.pages[toRemove];
             }
 
@@ -267,9 +281,25 @@
 			var block = Math.floor(row / self.state.blockSize);
 			var idx = row % self.state.blockSize;
 			
-			//console.log("in Block "+block );
-						
+			var fetchSize=0;
 			
+			if (typeof self.data["k"+row] == 'undefined') {
+				console.log("in Block "+row );
+				for( var i=0; i<bufferSize; i++) {
+					if (typeof self.data["k"+(row+i)] == 'undefined') {
+						self.data["k"+(row+i)] = new Array();
+						fetchSize=i;
+					}
+					else
+						break;
+				}
+				//self.service.getBlock(row, fetchSize, self.state, {
+				//	'success' : function(data) {
+				//		getBlock(row, data);
+				//	}
+				//});
+			}
+			return self.data["k"+row];
 			
 			// if we don't have the requested block, send AJAX request for it.
 			// Send only one request per block.
