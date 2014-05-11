@@ -348,6 +348,71 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	//	return $select;
 	//}
 	
+	public function getBlock2($start, $length, $state) {
+		try
+		{
+			$Results=array();
+			
+			if ($start <= $state['sortedLength']) {
+				$this->log->debug("in sorted length");
+				// Build core select
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+				
+				// set limits
+				$select->where($this->primary_col."<= ?", $state['sortedMaxPrimary']);
+				$select->limit($length,$start);
+				
+				// Build our order by
+				foreach($state['order_list'] as $orderby) {
+					$select->order($orderby);
+				}
+				
+				// Get rows
+				$Results = $this->fetchAll($select)->toArray();
+				
+				// If we get less than a full block
+				// see if we have any unsorted rows to pad out
+				// the block.
+				if (count($Results)<$length) {
+
+					$select = $this->buildSelect($state);
+					$select = $this->addConditionsToSelect($select);
+					
+					$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+					$select->limit($length-count($Results),0);
+						
+					// Order by primary
+					$select->order(array($this->primary_col));
+						
+					$UnsortedResults = $this->fetchAll($select)->toArray();
+						
+					foreach($UnsortedResults as $row)
+						array_push($Results, $row);
+				}
+			}
+			else {
+				// Get unsorted block
+			
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+				
+				$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+				$select->limit($length,$state['sortedLength']-$start);
+			
+				// Order by primary
+				$select->order(array($this->primary_col));
+			
+				$Results = $this->fetchAll($select)->toArray();
+			}
+			
+			return ($Results);
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	}
+	
 	public function getBlock($block,$state) {
 		
 		try

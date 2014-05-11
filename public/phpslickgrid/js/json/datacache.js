@@ -64,7 +64,7 @@
 				primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
 				maxPrimary : null,		// Maximum primary key so far.  Anything after this will be "new".
 				blockSize : 100,  		// Size of a block in rows (records).
-				blocksMax : 10,  		// Maximum number of blocks to keep at any given time.
+				blocksMax : 100,  		// Maximum number of blocks to keep at any given time.
 				pollFrequency : 100000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				order_list : {},		// Current sort order
 				filters : new Array(),  // Current filters
@@ -158,6 +158,46 @@
 //				});
 //			}
 			return (self.state.gridLength - 0);
+		}
+		
+		function getBlock2(start, data) {
+		
+			// Create array of updated indices
+			var indices = new Array();
+			
+			var len = data.length;
+			for ( var i = 0; i < len; i++) {
+				// Add to data, reverse lookup and stack
+				console.log("in loop in getBalck2");
+				console.log(start);
+				console.log(i);
+				self.data["k"+(start+i)]=data[i];
+				self.reverseLookup["k" + data[i][self.state.primay_col]]=(start+i);
+				self.state.active_buffers.push("k"+(start+i));
+				
+				// Track what rows the grid needs to update
+				indices.push(start+i);
+				
+				// Update time/date of the newest item seen.
+				if (typeof data[i][self.state.upd_dtm_col] != 'undefined') 
+					if (String(data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
+						self.state.newestRecord = data[i][self.state.upd_dtm_col];
+				
+				// Maintain our buffer size limit
+				while (self.state.active_buffers.length>=self.state.blocksMax) {
+					var toRemove=self.state.active_buffers.shift();
+					delete self.reverseLookup["k" + self.data[toRemove][self.state.primay_col]];
+					delete self.data[toRemove];
+				}
+			}
+			
+			// clean up
+			delete data;
+			
+			onRowsChanged.notify({
+				rows : indices
+			}, null, self);
+			
 		}
 		
 		function getBlock(block, data) {
@@ -293,11 +333,11 @@
 					else
 						break;
 				}
-				//self.service.getBlock(row, fetchSize, self.state, {
-				//	'success' : function(data) {
-				//		getBlock(row, data);
-				//	}
-				//});
+				self.service.getBlock2(row, (fetchSize+1), self.state, {
+					'success' : function(data) {
+						getBlock2(row, data);
+					}
+				});
 			}
 			return self.data["k"+row];
 			
