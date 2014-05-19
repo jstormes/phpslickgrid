@@ -20,7 +20,7 @@ class PHPSlickGrid_Db_Table_Abstract2 extends Zend_Db_Table_Abstract
 	 *
 	 * @var array
 	 */
-	public $_gridState = array();
+	public $state = array();
 	
 	/**
 	 * Column Configuration
@@ -115,6 +115,15 @@ class PHPSlickGrid_Db_Table_Abstract2 extends Zend_Db_Table_Abstract
 			}
 		}
 		
+		/* Initialize the grid configuration. */
+		$this->_gridState['gridName'] = $this->_gridName;
+		$this->_gridState['tableName'] = $this->_name;
+		
+		/* Get control columns */
+		$this->_gridState['primay_col'] = $this->_gridName."$".$this->_primary_col;
+		$this->_gridState['upd_dtm_col'] = $this->_gridName."$".$this->_upd_dtm_col;
+		$this->_gridState['deleted_col'] = $this->_gridName."$".$this->_deleted_col;
+		
 		// Hook into grid init.
 		$this->_gridInit();
 				
@@ -127,42 +136,57 @@ class PHPSlickGrid_Db_Table_Abstract2 extends Zend_Db_Table_Abstract
 	public function initState() {
 		
 		
-		/* Initialize the grid configuration. */
-		$this->_gridState['gridName'] = $this->_gridName;
-		$this->_gridState['tableName'] = $this->_name;
-		
-		/* Get control columns */
-		$this->_gridState['primay_col'] = $this->_gridName."$".$this->_primary_col;
-		$this->_gridState['upd_dtm_col'] = $this->_gridName."$".$this->_upd_dtm_col;
-		$this->_gridState['deleted_col'] = $this->_gridName."$".$this->_deleted_col;
+
 		
 		/* Set initial state */
 		$this->_gridState['gridLength']       = $this->getLength();      // filtered row count
 		$this->_gridState['sortedLength']     = $this->getLength();      // filtered row count
 		$this->_gridState['totalRows']        = $this->getTotalLenth();  // un-filtered row count
-		$this->_gridState['maxPrimary']       = $this->getMaxPrimary();  // filtered max primary key
+//		$this->_gridState['maxPrimary']       = $this->getMaxPrimary();  // filtered max primary key
 		$this->_gridState['sortedMaxPrimary'] = $this->getMaxPrimary();  // filtered max primary key
 		$this->_gridState['maxDateTime']      = $this->getMaxDateTime(); // filtered max date time
 		
 		
 		/* Set some defaults */
-		//$this->_gridState['editable']             = true;
-		//$this->_gridState['enableAddRow']         = true;
-		//$this->_gridState['enableCellNavigation'] = true;
-		//$this->_gridState['enableEditorLoading']  = false;
-		//$this->_gridState['autoEdit']             = true;
-		//$this->_gridState['enableColumnReorder']  = true;
-		//$this->_gridState['forceFitColumns']      = false;
-		//$this->_gridState['rowHeight']            = 22;
-		//$this->_gridState['autoHeight']           = false;
-		//$this->_gridState['multiColumnSort']      = true;
-		//$this->_gridState['minWidth']			  = 5;
+		$this->_gridState['editable']             = true;
+		$this->_gridState['enableAddRow']         = true;
+		$this->_gridState['enableCellNavigation'] = true;
+		$this->_gridState['enableEditorLoading']  = false;
+		$this->_gridState['autoEdit']             = true;
+		$this->_gridState['enableColumnReorder']  = true;
+		$this->_gridState['forceFitColumns']      = false;
+		$this->_gridState['rowHeight']            = 22;
+		$this->_gridState['autoHeight']           = false;
+		$this->_gridState['multiColumnSort']      = true;
+		$this->_gridState['minWidth']			  = 5;
 		
 		$this->_initState();
 	}
 	
 	protected function _initState() {
 		
+	}
+	
+	/**
+	 * 
+	 * @param array $state
+	 * @throws Exception
+	 * @return array
+	 */
+	public function resetState($state) {
+		try
+		{
+			$state['gridLength']       = $this->getLength($state);      // filtered row count
+			$state['sortedLength']     = $this->getLength($state);      // filtered row count
+			$state['totalRows']        = $this->getTotalLenth($state);  // un-filtered row count
+			$state['sortedMaxPrimary'] = $this->getMaxPrimary($state);  // filtered max primary key
+			$state['maxDateTime']      = $this->getMaxDateTime($state); // filtered max date time
+			
+			return $state;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
 	}
 	
 	public function StateToJSON() {
@@ -410,7 +434,7 @@ class PHPSlickGrid_Db_Table_Abstract2 extends Zend_Db_Table_Abstract
 				foreach($state['order_list'] as $orderby) {
 					$select->order($orderby);
 				}
-	
+				
 				// Get rows
 				$Results = $this->fetchAll($select)->toArray();
 	
