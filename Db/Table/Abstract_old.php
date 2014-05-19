@@ -1,5 +1,5 @@
 <?php
-class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
+class PHPSlickGrid_Db_Table_Abstract_old extends Zend_Db_Table_Abstract
 {	
 	/**
 	 * Grid Name

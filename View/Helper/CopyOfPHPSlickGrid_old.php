@@ -34,38 +34,38 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$this->Table = $Table;
 		$this->Options = $Options;
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 		
 		// Set the json entry URL, if not all ready set:
-		if (!isset($Table->_gridState['jsonrpc']))
-			$Table->_gridState['jsonrpc']=$this->view->url(array("action"=>"json"));
+		if (!isset($Table->getGridConfiguration()->jsonrpc))
+			$Table->getGridConfiguration()->jsonrpc=$this->view->url(array("action"=>"json"));
 		
 		// Build the HTML div for the view helper
-		$HTML = "<div id='{$GridName}' style='height:100%;'></div>\n\n";
+		$HTML = "<div id='".$Table->getGridName()."' style='height:100%;'></div>\n\n";
 		
 		// Build the script for the view helper
 		$HTML .= "<script>\n";
 		
-		//$HTML .= "var {$GridName}TotalRows = ".$Table->getLength(array()).";\n\n";
+		$HTML .= "var {$GridName}TotalRows = ".$Table->getLength(array()).";\n\n";
 		
 		// Render the column configuration to the browser:
-		$HTML .= "var {$GridName}Columns = ".$Table->ColumnsToJSON().";\n\n";
+		$HTML .= "var {$GridName}Columns = ".$Table->getColumnConfiguration()->ToJavaScript().";\n\n";
 				
 		// Render the grid configuration to the browser:
-		$HTML .= "var {$GridName}State = ".$Table->StateToJSON().";\n\n";
+		$HTML .= "var {$GridName}Options = ".$Table->getGridConfiguration()->ToJSON().";\n\n";
 
 // 		// Render the grid data connection to the browser:
 // 		if (isset($Options['DataFromGrid']))
 // 			$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataMirror('{$Options['DataFromGrid']}Data');\n\n";
 // 		else
- 			$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}State);\n\n";
+// 			$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}Options);\n\n";
 		
 // 		// Render the grid to the browser:
- 		$HTML .= "var {$GridName} = new Slick.Grid('#{$GridName}', {$GridName}Data, {$GridName}Columns, {$GridName}State);\n\n";
+// 		$HTML .= "var {$GridName} = new Slick.Grid('#{$GridName}', {$GridName}Data, {$GridName}Columns, {$GridName}Options);\n\n";
 		
 		
 // 		// Render any needed Dynamic Java Script:
- 		$HTML .= $this->DynamicJS();
+// 		$HTML .= $this->DynamicJS();
 		
 		
 // 		//$HTML .= "    {$GridName}.render();\n";
@@ -96,7 +96,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onRowCountChanged() {
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 		
 		$HTML  = "{$GridName}Data.onRowCountChanged.subscribe(function (e, args) { \n";
 		$HTML .= "    {$GridName}.updateRowCount();\n";
@@ -108,7 +108,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onRowChanged() {
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 		
 		$HTML  = "{$GridName}Data.onRowsChanged.subscribe(function (e, args) { \n";
 		//$HTML .= "    console.log('updating rows '+args.rows);\n";
@@ -121,7 +121,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onSort() {
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 		
 		$HTML  = "// ****************************************************************\n";
 		$HTML .= "// Wire up the sort to the data layer\n";
@@ -146,7 +146,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onCellChange() {
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 	
 		$HTML  = "// ****************************************************************\n";
 		$HTML .= "// Wire up row update \n";
@@ -160,7 +160,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	
 	private function onAddNewRow() {
 		
-		$GridName = $this->Table->_gridName;
+		$GridName = $this->Table->getGridName();
 	
 		$HTML  = "// ****************************************************************\n";
 		$HTML .= "// Wire up row add \n";

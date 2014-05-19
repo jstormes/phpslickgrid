@@ -63,8 +63,8 @@
 				upd_dtm_col : null, 	// Time stamp column, used to keep track of when to "update" the column values.
 				primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
 				maxPrimary : null,		// Maximum primary key so far.  Anything after this will be "new".
-				blockSize : 100,  		// Size of a block in rows (records).
-				blocksMax : 100,  		// Maximum number of blocks to keep at any given time.
+				blockSize : 10,  		// Size of a block in rows (records).
+				blocksMax : 500,  		// Maximum number of blocks to keep at any given time.
 				pollFrequency : 100000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				order_list : {},		// Current sort order
 				filters : new Array(),  // Current filters
@@ -78,7 +78,7 @@
 			};
 		
 		self.data = new Array();
-		var bufferSize = 10;
+		var bufferSize = 100;
 		
 		// Prime the state default state + inital state from server.
 		self.state = $.extend(true, {}, default_state, inital_state);
@@ -132,7 +132,7 @@
 		function getLength() {
 //			var now = new Date();
 //			
-//			// Refactor this to only use state!!!!!!!!
+//			// TODO:Refactor this back to poll on light stale!!!
 //
 //			// If it has been more than 800ms (0.8 second)
 //			// trigger the callback.
@@ -168,9 +168,6 @@
 			var len = data.length;
 			for ( var i = 0; i < len; i++) {
 				// Add to data, reverse lookup and stack
-				console.log("in loop in getBalck2");
-				console.log(start);
-				console.log(i);
 				self.data["k"+(start+i)]=data[i];
 				self.reverseLookup["k" + data[i][self.state.primay_col]]=(start+i);
 				self.state.active_buffers.push("k"+(start+i));
@@ -235,12 +232,12 @@
 			
 				
 				
-				console.log("block_offset "+block);
+				//console.log("block_offset "+block);
 				//console.log(self.pages[block]);
 				
 				var len = self.pages[block].data.length;
 				
-				console.log("block length "+len);
+				//console.log("block length "+len);
 				for ( var i = 0; i < len; i++) {
 					
 					if (((block*self.state.blockSize) + i) < self.state.sortedLength) {
@@ -312,33 +309,38 @@
 		}
 		
 		function getItem(row) {
-			//console.log("getting Row "+row);
-
-			// TODO: Switch from top bottom to sorted length
-			// if row is greater than sorted length do reverse lookup.
-
-					
-			var block = Math.floor(row / self.state.blockSize);
-			var idx = row % self.state.blockSize;
 			
 			var fetchSize=0;
+			var start = row;
+			
 			
 			if (typeof self.data["k"+row] == 'undefined') {
-				console.log("in Block "+row );
 				for( var i=0; i<bufferSize; i++) {
 					if (typeof self.data["k"+(row+i)] == 'undefined') {
 						self.data["k"+(row+i)] = new Array();
-						fetchSize=i;
+						fetchSize++;
 					}
-					else
-						break;
+					else {
+						if ((start-1) > 0) {
+							if (typeof self.data["k"+(start)] == 'undefined') {
+								self.data["k"+(start)] = new Array();
+								fetchSize++;
+								start--;
+							}
+							else
+								break;
+						}
+						else
+							break;
+					}
 				}
-				self.service.getBlock2(row, (fetchSize+1), self.state, {
+				self.service.getBlock(start, (fetchSize), self.state, {
 					'success' : function(data) {
-						getBlock2(row, data);
+						getBlock2(start, data);
 					}
 				});
 			}
+			// return whatever we have.
 			return self.data["k"+row];
 			
 			// if we don't have the requested block, send AJAX request for it.
@@ -438,7 +440,7 @@
 						// Calculate the bottom buffer
 						offset_row = row - self.state.top_length;
 						type = 'b';
-						console.log("Bottom buffer add");
+						//console.log("Bottom buffer add");
 					}
 							
 					var block = type+(Math.floor(offset_row / self.state.blockSize));
@@ -489,8 +491,8 @@
 		
 			function SyncController(data) {
 
-				console.log("sync");
-				console.log(data);
+				//console.log("sync");
+				//console.log(data);
 //				updateLength(data);
 
 //				updateBuffers(data);
@@ -512,7 +514,8 @@
 			}
 			
 			// Kick off the Syncing
-			SyncRequest();
+			//SyncRequest();
+			setTimeout(SyncRequest, self.state.pollFrequency);
 		}
 
 		

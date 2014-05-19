@@ -1,6 +1,6 @@
 <?php
 
-class PHPSlickGrid_Db_Table extends PHPSlickGrid_Db_Table_Abstract
+class PHPSlickGrid_Db_Table extends PHPSlickGrid_Db_Table_Abstract2
 {
 	//protected $_rowClass = 'PHPSlickGrid_Db_Table_Row';
 	
