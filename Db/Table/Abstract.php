@@ -1,87 +1,76 @@
 <?php
 class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
-{	
-	/**
-	 * Grid Name
-	 * 
-	 * @var string
-	 */
-	protected $_gridName = '';
-	
-	/**
-	 * Grid Configuration
-	 * 
-	 * @var PHPSlickGrid_GridConfig
-	 */
-	protected $_gridConfig = null;
-
-	
-	/**
-	 * Column Configuration
-	 * 
-	 * @var PHPSlickGrid_ColumnConfig
-	 */
-	protected $_columnConfig = null;
-	
-	/**
-	 * State of the data cache.
-	 * 
-	 * @var array
-	 */
-	protected $state = array();
-	
-	/**
-	 * Table used to store meta data about columns 
-	 * 
-	 * @var unknown
-	 */
-	protected $_metaTable = null;
-	
-	/**
-	 * Zend Acl used for table security
-	 * 
-	 * @var Zend_Acl
-	 */
-	protected $_ACL = null;
-	
-	/**
-	 * Current role
-	 * 
-	 * @var string
-	 */
-	protected $_currentRole = null;
-	
-	/**
-	 * Total row count
-	 * 
-	 * @var integer
-	 */
-	protected $_totalLength = 0;
-	
+{
 	/**
 	 * Logging Object
-	 * 
+	 *
 	 * @var Zend_Log
 	 */
 	protected $log = null;
 	
 	/**
-	 * Column to track row updates
-	 * 
+	 * Grid Name
+	 *
 	 * @var string
 	 */
-	protected $upd_dtm_col = null;
+	public $_gridName = '';
+	
+	/**
+	 * Grid State
+	 *
+	 * @var array
+	 */
+	public $state = array();
+	
+	/**
+	 * Column Configuration
+	 *
+	 * @var array
+	 */
+	protected $_gridColumns = array();
+	
+	/**
+	 * Table used to store meta data about columns
+	 *
+	 * @var unknown
+	 */
+	protected $_metaTable = null;
+	
+	/* Key columns used by the grid to update "state" */
+	
+	/**
+	 * Primary column
+	 *
+	 * @var string
+	 */
+	protected $_primary_col = null;
+	
+	/**
+	 * Column to track row updates
+	 *
+	 * @var string
+	 */
+	protected $_upd_dtm_col = null;
 	
 	/**
 	 * Column to track row deletes
-	 * 
+	 *
 	 * @var string
 	 */
-	protected $deleted_col = null;
+	protected $_deleted_col = null;
 	
+	
+	
+	/* Used for local caching, to maintain constant view of data. */
+	protected $_Length      = null;
+	protected $_TotalLenth  = null;
+	protected $_MaxPrimary  = null;
+	protected $_MaxDateTime = null;
+	
+	protected $_info = null;
 	
 	/**
-	 * Call the existing constructor then initialize our PHPSlickGrid 
+	 * Call the existing constructor then initialize our PHPSlickGrid
 	 * properties.
 	 *
 	 * By: jstormes Feb 5, 2014
@@ -89,7 +78,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @param unknown $config
 	 */
 	public function __construct($config = array())
-	{	
+	{
 		// Setup our log, very useful for debugging.
 		if (Zend_Registry::isRegistered('log')) {
 			$this->log = Zend_Registry::get('log');
@@ -99,81 +88,215 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$writer_firebug = new Zend_Log_Writer_Firebug();
 			$this->log->addWriter($writer_firebug);
 		}
-			
+		
 		/* Default the grid name to the table name. */
 		if ($this->_gridName=='')
 			$this->_gridName = $this->_name;
 		
+		
+		
 		parent::__construct();
+
+		// get the schema from the database
+		$this->_info = $this->info();
 		
-		/* Initialize the grid configuration. */
-		$this->_gridConfig = new PHPSlickGrid_GridConfig();
-		$this->_gridConfig->gridName	= $this->_gridName;
-		$this->_gridConfig->tableName	= $this->_name;
-		
-		// Get primary key column.
-		if (is_string($this->_primary)) {
-			$this->_gridConfig->primay_col = $this->_gridName."$".$this->_primary;
-			$this->primary_col = $this->_primary;
-		}
-		
-		// Get time stamp column
-		$this->_setupMetadata();
-		foreach($this->_metadata as $Value) {
-			if ($Value['DEFAULT']=='CURRENT_TIMESTAMP') {
-				$this->_gridConfig->upd_dtm_col=$this->_gridName."$".$Value['COLUMN_NAME'];
-				$this->upd_dtm_col = $Value['COLUMN_NAME'];
-				break;
+		// Set primary column from db schema
+		$this->_primary_col = array_shift($this->_primary);
+
+		// If we don't have a time stamp column, try and find one.
+		if ($this->_upd_dtm_col==null) {
+			$this->_setupMetadata();
+			foreach($this->_metadata as $Value) {
+				if ($Value['DEFAULT']=='CURRENT_TIMESTAMP') {
+					//$this->_gridConfig->upd_dtm_col=$this->_gridName."$".$Value['COLUMN_NAME'];
+					$this->_upd_dtm_col = $Value['COLUMN_NAME'];
+					break;
+				}
 			}
 		}
-			
-		/* Initialize the column configuration. */
-		$this->_columnConfig = new PHPSlickGrid_ColumnConfig($this, $this->_metaTable, $this->_ACL, $this->_currentRole);
 		
+		/* Initialize the grid configuration. */
+		$this->_gridState['gridName'] = $this->_gridName;
+		$this->_gridState['tableName'] = $this->_name;
+		
+		/* Get control columns */
+		$this->_gridState['primay_col'] = $this->_gridName."$".$this->_primary_col;
+		$this->_gridState['upd_dtm_col'] = $this->_gridName."$".$this->_upd_dtm_col;
+		$this->_gridState['deleted_col'] = $this->_gridName."$".$this->_deleted_col;
+		
+		// Hook into grid init.
 		$this->_gridInit();
-		
-		//TODO: Don't call all of this crap for call backs.
-		
-		//$grid_length = $this->getLength(array());
-		
-		// Prime the state.  Make this more formal.  Change _gridConfig to _inital_state!!!!!
-		// Make propery/index names match from php to js!!!!
-		$this->initState();
-		$this->_gridConfig->gridLength       = $this->getLength();      // filtered row count
-		$this->_gridConfig->sortedLength     = $this->getLength();      // filtered row count
-		$this->_gridConfig->totalRows        = $this->getTotalLenth();  // un-filtered row count
-		$this->_gridConfig->maxPrimary       = $this->getMaxPrimary();  // filtered max primary key
-		$this->_gridConfig->sortedMaxPrimary = $this->getMaxPrimary();  // filtered max primary key
-		$this->_gridConfig->maxDateTime      = $this->getMaxDateTime(); // filtered max date time
-		
-	}
-	
-	public function initState() {
-		//$this->state['gridLength']=0;
-		//$this->state['totalRows']=0;
-		//$this->state['maxPrimary']=0;
-		//$this->state['max_dt']='0';
+				
 	}
 	
 	protected function _gridInit() {
+	
+	}
+	
+	public function initState() {
+		
+		
+
+		
+		/* Set initial state */
+		$this->_gridState['gridLength']       = $this->getLength();      // filtered row count
+		$this->_gridState['sortedLength']     = $this->getLength();      // filtered row count
+		$this->_gridState['totalRows']        = $this->getTotalLenth();  // un-filtered row count
+		$this->_gridState['sortedMaxPrimary'] = $this->getMaxPrimary();  // filtered max primary key
+		$this->_gridState['maxDateTime']      = $this->getMaxDateTime(); // filtered max date time
+		
+		
+		/* Set some defaults */
+		$this->_gridState['editable']             = true;
+		$this->_gridState['enableAddRow']         = true;
+		$this->_gridState['enableCellNavigation'] = true;
+		$this->_gridState['enableEditorLoading']  = false;
+		$this->_gridState['autoEdit']             = true;
+		$this->_gridState['enableColumnReorder']  = true;
+		$this->_gridState['forceFitColumns']      = false;
+		$this->_gridState['rowHeight']            = 22;
+		$this->_gridState['autoHeight']           = false;
+		$this->_gridState['multiColumnSort']      = true;
+		$this->_gridState['minWidth']			  = 5;
+		
+		$this->_initState();
+	}
+	
+	protected function _initState() {
+		
+	}
+	
+	/**
+	 * 
+	 * @param array $state
+	 * @throws Exception
+	 * @return array
+	 */
+	public function resetState($state) {
+		try
+		{
+			$state['gridLength']       = $this->getLength($state);      // filtered row count
+			$state['sortedLength']     = $this->getLength($state);      // filtered row count
+			$state['totalRows']        = $this->getTotalLenth($state);  // un-filtered row count
+			$state['sortedMaxPrimary'] = $this->getMaxPrimary($state);  // filtered max primary key
+			$state['maxDateTime']      = $this->getMaxDateTime($state); // filtered max date time
+			
+			return $state;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
+	}
+	
+	public function StateToJSON() {
+		
+		$this->initState();
+		
+		return (json_encode($this->_gridState));
+	}
+	
+	public function initColumns() {
+		/* Initialize the column configuration. */
+		$this->buildGridColumnsFromDBSchema();
+		
+		$this->_initColumns();
+	}
+	
+	protected function _initColumns() {
+		
+	}
+	
+	/**
+	 * Convert Columns to JSON.
+	 *
+	 * By: jstormes Feb 5, 2014
+	 *
+	 * @return string
+	 */
+	public function ColumnsToJSON() {
+		
+		
+		$this->initColumns();
+		
+		$JSON = '[';
+		 
+		foreach($this->_gridColumns as $Column)
+			$JSON.=json_encode($Column,JSON_FORCE_OBJECT).",\n";
+		 
+		// trim the trailing "," off the string.
+		$JSON = rtrim($JSON,",\n");
+		 
+		$JSON .= "]";
+		 
+		return $JSON;
+	}
+	
+	public function buildGridColumnsFromDBSchema() {
+		
+		// Get info on source table
+		$info=$this->info();
+		
+		// Set column from the database table columns.
+		foreach($info['cols'] as $DBColumn) {
+			
+			$newColumn = array();
+		
+			// Set the default Slickgrid id for the column = database column name
+			$newColumn['id']=$DBColumn;
+		
+			// If this column is the same as the primary key for the table,
+			// name the Slickgrid column "#" else the name of the column will match
+			// the database column.
+			if ($DBColumn==$this->_primary_col) {
+				$newColumn['name']="#";
+			}
+			else {
+				// Default the name to the MySQL column name.
+				$newColumn['name']=$DBColumn;
+				$newColumn['editor']='PHPSlick.Editors.'.$info['metadata'][$DBColumn]['DATA_TYPE'];
+			}
+		
+			// Set the Slickgrid field to (table_name)$(column_name)
+			$newColumn['field']=$this->_name."$".$DBColumn;
+		
+			// Default to sortable
+			$newColumn['sortable']=true;
+		
+			// Default width to 100 px.
+			$newColumn['width']=100;
+		
+			// Save the SQL data type in case it is needed later
+			$newColumn['sql_type']=$info['metadata'][$DBColumn]['DATA_TYPE'];
+		
+			// If the database field has a length save it in case it is needed later.
+			if ($info['metadata'][$DBColumn]['LENGTH']!='')
+				$newColumn['sql_length']=$info['metadata'][$DBColumn]['LENGTH'];
+			
+			$this->_gridColumns[$DBColumn] = $newColumn;
+		}
 		
 	}
 	
 	public function getMaxPrimary($state=null) {
+		
 		try
 		{
-			// Get total possible rows
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			
-			// Apply user filters
-			//$select = $this->addFilters($select, $state);
-			
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridConfig->primay_col}) as num");
-			$row = $this->fetchRow($count_select);
-			return $row->num;
+			if ($this->_MaxPrimary==null) {	
+				// Get maximum primary key
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+					
+				// Apply user filters
+				//$select = $this->addFilters($select, $state);
+					
+				$count_select = $this->select();
+				$count_select->setIntegrityCheck(false);
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridState['primay_col']}) as num");
+				$row = $this->fetchRow($count_select);
+				
+				$this->_MaxPrimary=$row->num;
+			}
+			return $this->_MaxPrimary;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
@@ -183,18 +306,22 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getMaxDateTime($state=null) {
 		try
 		{
-			// Get total possible rows
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			
-			// Apply user filters
-			//$select = $this->addFilters($select, $state);
-			
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridConfig->upd_dtm_col}) as num");
-			$row = $this->fetchRow($count_select);
-			return $row->num;
+			if ($this->_MaxDateTime==null) {
+				// Get max date time
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+					
+				// Apply user filters
+				//$select = $this->addFilters($select, $state);
+					
+				$count_select = $this->select();
+				$count_select->setIntegrityCheck(false);
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridState['upd_dtm_col']}) as num");
+				$row = $this->fetchRow($count_select);
+				
+				$this->_MaxDateTime=$row->num;
+			}
+			return $this->_MaxDateTime;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
@@ -204,158 +331,77 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getTotalLenth($state=null) {
 		try
 		{
-			// Get total possible rows
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
-			$row = $this->fetchRow($count_select);
-			return $row->num;
+			if ($this->_TotalLenth==null) {
+				// Get total possible rows
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+				$count_select = $this->select();
+				$count_select->setIntegrityCheck(false);
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
+				$row = $this->fetchRow($count_select);
+				
+				$this->_TotalLenth = $row->num;
+			}
+			return $this->_TotalLenth;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
 		}
-		
 	}
 	
 	public function getLength($state=null) {
 	
 		try
 		{
-			//$Res = array();
-				
-			$state_update = array();
-				
-			// Get row count for grid
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-				
-			// Apply user filters
-			//$select = $this->addFilters($select, $state);
-				
-			$count_select = $this->select();
-			$count_select->setIntegrityCheck(false);
-			$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
-			$row = $this->fetchRow($count_select);
-			return $row->num;
-
+			if ($this->_Length==null) {	
+				// Get row count for grid
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+		
+				// Apply user filters
+				//$select = $this->addFilters($select, $state);
+		
+				$count_select = $this->select();
+				$count_select->setIntegrityCheck(false);
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
+				$row = $this->fetchRow($count_select);
+				$this->_Length = $row->num;
+			}
+			return $this->_Length;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
 		}
-	
 	}
-	
-	/**
-	 * Get the grid configuration
-	 *
-	 * By: jstormes Feb 5, 2014
-	 *
-	 * @return PHPSlickGrid_GridConfig
-	 */
-	public function getGridConfiguration(){
-		return $this->_gridConfig;
-	}
-	
-	/**
-	 * Get the column configuration
-	 *
-	 * By: jstormes Feb 5, 2014
-	 *
-	 * @return PHPSlickGrid_ColumnConfig
-	 */
-	public function getColumnConfiguration() {
-		return $this->_columnConfig;
-	}
-	
-	public function getTableName() {
-		return $this->_name;
-	}
-	
-	/**
-	 * 
-	 *
-	 * By: jstormes Feb 10, 2014
-	 *
-	 * @return string
-	 */
-	public function getGridName() {
-		return $this->_gridName;
-	}
-	
-	/**
-	 * Set the grid name.
-	 *
-	 * By: jstormes Feb 5, 2014
-	 *
-	 * @param unknown $grid_name
-	 */
-	public function setGridName($grid_name) {
-		$this->_gridName				= $grid_name;
-		$this->_gridConfig->gridName	= $this->_gridName;
-	}
-	
 	
 	public function buildSelect($state=null) {
-		
-		$info=$this->info();
-		
+	
 		// Make column aliases - "(table name).(column name) as (table name)$(column name)"
 		$column = array();
-		foreach($info['cols'] as $key=>$value) {
-			$columns[$info['name']."$".$value]=$info['name'].".".$value;
+		foreach($this->_info['cols'] as $key=>$value) {
+			$columns[$this->_info['name']."$".$value]=$this->_info['name'].".".$value;
 		}
-		
+	
 		$select = $this->select();
 		$select->setIntegrityCheck(false);
-		$select->from(array($info['name'] => $info['name']),$columns);
-		
-		
+		$select->from(array($this->_info['name'] => $this->_info['name']),$columns);
+	
+
+	
 		return $select;
 	}
 	
-
 	public function addConditionsToSelect(Zend_Db_Select $select) {
 		return $select;
 	}
 	
-	
-	
-// 	public function getMaxPrimary($state=null) {
-// 		try
-// 		{
-// 			// Get Maximum primary key value
-// 			$select = $this->buildSelect($state);
-// 			$select = $this->addConditionsToSelect($select);
-				
-// 			// Apply user filters
-// 			//$select = $this->addFilters($select, $state);
-				
-// 			$count_select = $this->select();
-// 			$count_select->setIntegrityCheck(false);
-// 			$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(".$this->_gridConfig->primay_col.") as num");
-// 			$row = $this->fetchRow($count_select);
-			
-// 			return $row->num;
-// 		}
-// 		catch (Exception $ex) { // push the exception code into JSON range.
-// 			throw new Exception($ex, 32001);
-// 		}
-// 	}
-	
-	//public function LimitSelectToMaxPrimary(Zend_Db_Select $select, $state) {
-	//	$select->where($this->primary_col."<= ?", $state['maxPrimary']);
-	//	return $select;
-	//}
-	
 	/**
 	 * Returns a contiguous block of records based on the current
 	 * sort, sortedLength and sortedMaxPrimary state properties.
-	 * 
+	 *
 	 * Rows created before the last sort will be less than sortedLength
 	 * and will be returned in sorted order, sorted by order_list.
-	 * 
+	 *
 	 * Rows created after the last sort will be greater than the
 	 * sortedMaxPrimary and will be returned in primary key
 	 * order.
@@ -368,21 +414,21 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @throws Exception
 	 * @return multitype: Array of items (rows)
 	 */
-	public function getBlock2($start, $length, $state) {
+	public function getBlock($start, $length, $state) {
 		try
 		{
 			$Results=array();
-			
+				
 			if ($start <= $state['sortedLength']) {
 				//$this->log->debug("in sorted length");
 				// Build core select
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
-				
+	
 				// set limits
-				$select->where($this->primary_col."<= ?", $state['sortedMaxPrimary']);
+				$select->where($this->_primary_col."<= ?", $state['sortedMaxPrimary']);
 				$select->limit($length,$start);
-				
+	
 				// Build our order by
 				foreach($state['order_list'] as $orderby) {
 					$select->order($orderby);
@@ -390,42 +436,42 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				
 				// Get rows
 				$Results = $this->fetchAll($select)->toArray();
-				
+	
 				// If we get less than a full block
 				// see if we have any unsorted rows to pad out
 				// the block.
 				if (count($Results)<$length) {
-
+	
 					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
-					
-					$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+						
+					$select->where($this->_primary_col."> ?", $state['sortedMaxPrimary']);
 					$select->limit($length-count($Results),0);
-						
+	
 					// Order by primary
-					$select->order(array($this->primary_col));
-						
+					$select->order(array($this->_primary_col));
+	
 					$UnsortedResults = $this->fetchAll($select)->toArray();
-						
+	
 					foreach($UnsortedResults as $row)
 						array_push($Results, $row);
 				}
 			}
 			else {
 				// Get unsorted block
-			
+					
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
-				
-				$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
+	
+				$select->where($this->_primary_col."> ?", $state['sortedMaxPrimary']);
 				$select->limit($length,$state['sortedLength']-$start);
-			
+					
 				// Order by primary
-				$select->order(array($this->primary_col));
-			
+				$select->order(array($this->_primary_col));
+					
 				$Results = $this->fetchAll($select)->toArray();
 			}
-			
+				
 			return ($Results);
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
@@ -433,353 +479,34 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		}
 	}
 	
-	public function getBlock($block,$state) {
-		
-		try
-		{
-			//return array();
-			// Merge javascript options with php parameters.
-			//$parameters=array_merge_recursive($options,$this->parameters);
-			$Results=array();
-			
-			// Get sorted block.
-			if ($block <= (floor($state['sortedLength'] / $state['blockSize']))) {
-				// Corner case where we are at the end of the sorted block,
-				// look for the next rows, sort by primary key for consistancy.
-				// IF record count < block length then pad out with select with 
-				// order by primary key.
-				$select = $this->buildSelect($state);
-				$select = $this->addConditionsToSelect($select);
-				
-				$select->where($this->primary_col."<= ?", $state['sortedMaxPrimary']);
-				$select->limit($state['blockSize'],$block*$state['blockSize']);
-				// Build our order by
-				foreach($state['order_list'] as $orderby) {
-					$select->order($orderby);
-				}
-				
-				$Results = $this->fetchAll($select)->toArray();
-				
-				// If we get less than a full block
-				// see if we have any unsorted rows to pad out
-				// the block.
-				if (count($Results)<$state['blockSize']) {
-					//$this->log->debug("Getting unsorted block");
-					$select = $this->buildSelect($state);
-					$select = $this->addConditionsToSelect($select);
-					$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
-					$select->limit($state['blockSize']-count($Results),0);
-					
-					// Order by primary
-					$select->order(array($this->primary_col));
-					
-					$UnsortedResults = $this->fetchAll($select)->toArray();
-					
-					foreach($UnsortedResults as $row)
-						array_push($Results, $row);
-
-				}
-			}
-			else {
-				// Get unsorted block
-				// Calculate offset:
-				$offset = ($state['sortedLength'] % $state['blockSize']);
-				
-				$select = $this->buildSelect($state);
-				$select = $this->addConditionsToSelect($select);
-				$select->where($this->primary_col."> ?", $state['sortedMaxPrimary']);
-				$select->limit($state['blockSize'],($block*$state['blockSize'])+$offset);
-				
-				// Order by primary
-				$select->order(array($this->primary_col));
-				
-				$Results = $this->fetchAll($select)->toArray();
-
-			}
-			
-			
-			
-			
-			
-			
-			/*
-			 * Explode the results into row[Index][Table Name][Column] format
-			*/
-			//$Results = $this->fetchAll($select)->toArray();
-
-			return ($Results);
-		}
-		catch (Exception $ex) { // push the exception code into JSON range.
-			throw new Exception($ex, 32001);
-		}
-
-	}
 	
-	public function LimitSelectToNewRecords(Zend_Db_Select $select, $state) {
-		$select->where($this->primary_col."> ?", $state['maxPrimary']);
-		return $select;
-	}
 	
-	public function getNewBlock($block,$state) {
-	
-		try
-		{
-			//return array();
-			// Merge javascript options with php parameters.
-			//$parameters=array_merge_recursive($options,$this->parameters);
-				
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			$select = $this->LimitSelectToNewRecords($select, $state);
-			$select->limit($state['blockSize'],$block*$state['blockSize']);
-				
-			// ****** No order by for new records ********
-			// Build our order by
-			//foreach($state['order_list'] as $orderby) {
-			//	$select->order($orderby);
-			//}
-				
-			/*
-			 * Explode the results into row[Index][Table Name][Column] format
-			*/
-			$Results = $this->fetchAll($select)->toArray();
-	
-			return ($Results);
-		}
-		catch (Exception $ex) { // push the exception code into JSON range.
-			throw new Exception($ex, 32001);
-		}
-	
-	}
-	
-	/**
-	 * return the primary keys of all rows that are newer than
-	 * the passed date.
-	 *
-	 * NOTE: if date created=date updated then don't return that row.
-	 * Keeps the system from jumping rows???????
-	 *
-	 * @param array pollRequest
-	 * @return array
-	 */
 	public function SyncDataCache($state) {
-		//throw new Exception('Error Msg', 32001);
-		//sleep(10);
-		try {
-			/* Basic logic:
-			 * Get all records > maxPrimary and all records
-			 * where Update Date Time > maxDateTime
-			 * 
-			 * IDEA!:
-			 * By default and new record IE > maxPrimary
-			 * will have a update date time > maxDateTime!!!!!
-			 */
-			
-			// TODO: Include records > maxPrimary.
-			if ($state==null)
-				return null;
-			
-			$this->PollRequest($state);
-			
-			$pollResponse = array();
-			
-			$select = $this->buildSelect($state);
-			$select = $this->addConditionsToSelect($select);
-			// updated by date time
-			$select->where($this->upd_dtm_col." > ?",$state['newestRecord']);
-			// Order by upd_dtm_col
-			// limit to buffersize
-			$pollResponse['updatedRows'] = $this->fetchAll($select)->toArray();			
-			$pollResponse['datalength']=$this->getLength($state);
-			
-			
-			return $pollResponse;
-		}
-		catch (Exception $ex) {
-			throw new Exception($ex, 32001);
-		}
-	}
-	
-	/**
-	 * Hook for adding data to a poll reply.
-	 * 
-	 * Thanks to Dave Davidson.
-	 *
-	 * By: jstormes Mar 27, 2014
-	 *
-	 * @param unknown $data
-	 * @return unknown
-	 */
-	private function PollReply($data) {
-		return $data;
-	}
-	
-	/**
-	 * Hook for receiving data from a poll request.
-	 * 
-	 * Thanks to Dave Davidson.
-	 *
-	 * By: jstormes Mar 27, 2014
-	 *
-	 * @param unknown $data
-	 * @return unknown
-	 */
-	private function PollRequest($data) {
-		return $data;
-	}
-	
-	private function AddTableRefrence($row) {
-		
-		$info=$this->info();
-		$Row = array();
-		
-		foreach($row as $Key=>$Value) {
-			$Key = str_replace($info['name']."$", "", $Key);
-			$Row[$info['name']."$".$Key]=$Value;
-		}
-		
-		return $Row;
-	}
-	
-	private function RemoveTableRefrence($row) {
-		
-		$info=$this->info();
-		$Row = array();
-		
-		foreach($row as $Key=>$Value) {
-			$Key = str_replace($info['name']."$", "", $Key);
-			$Row[$Key]=$Value;
-		}
-		
-		return $Row;
-	}
-	
-	public function _updateItem($row, $state) {
-		return $row;
-	}
-	
-	/**
-	 * update an existing row
-	 *
-	 * @param  array $row
-	 * @param  array $options
-	 * @return array
-	 */
-	public function updateItem($row, $state=null) {
 
-		try {
-			// Remove any tables references from column names.
-			$row = $this->RemoveTableRefrence($row);
-			
-			if ($this->upd_dtm_col !== null)
-				$row[$this->upd_dtm_col]=null;
-			
-			// Perform any updateItem logic
-			$row = $this->_updateItem($row, $state);
-			if ($row===null) return null;  // if null update logic short circuited update.
-			
-			// Find the exiting Row in the database to update
-			$Row=$this->find($row[$this->_primary[1]])->current();
-			
-			// Copy values from the array to the existing row object.
-			foreach($row as $Key=>$Value) {
-				if (isset($Row[$Key])) {
-					if ($Value=='null') $Value=null;
-						$Row[$Key]=$Value;
-				}
-			}
- 			
-			// Save the row back into the database.
-			$Row->save();
-	
-			// return any rows updated from the last time this was called.
-			return $this->SyncDataCache($state);
-		}
-		catch (Exception $ex) {
-			throw new Exception(print_r($ex,true), 32001);
-		}
-	
-	}
-	
-	
-	public function _addItem($row,$state) {
-		return $row;
-	}
-	
-	/**
-	 * add a new row
-	 *
-	 * @param  array $row
-	 * @param  array $options
-	 * @return null
-	 */
-	public function addItem($row,$state=null) {
+		$ret = array();
 		
-		try {
-			// Remove any tables references from column names.
-			$row=$this->RemoveTableRefrence($row);
-			
-			// Perform any custom addItem logic
-			$row=$this->_addItem($row,$state);
-			if ($row===null) return null;  	// if custom add logic returns null,
-											// it handled the add.
-				
-			// Create the new row object
-			$NewRow=$this->createRow();	
-	
-			// Copy values from the array to the new row object.
-			foreach($row as $Key=>$Value) {
-				if (isset($NewRow[$Key])) {
-					if ($Value=='null') $Value=null;
-					$NewRow[$Key]=$Value;
-				}
-			}
-			
-			// Save the new row.
-			$NewRow->save();
-			
-			// Pass the new row array back to javascript.
-			return $this->SyncDataCache($state);
+		$ret['gridLength'] = $this->getLength();      // filtered row count
+		$ret['totalRows']  = $this->getTotalLenth();  // un-filtered row count
+		$ret['UpdatedRows']=array();
+		
+		$select = $this->buildSelect($state);
+		$select = $this->addConditionsToSelect($select);
+		
+		$select->where("{$this->_primary_col} IN(?)", $state['activeKeys']);
+		//$select->where("{$this->_upd_dtm_col} > ?",$state['maxDateTime']);
+		
+		$rows = $this->fetchAll($select)->toArray();
+		
+		$inScope=array();
+		foreach($rows as $row) {
+			if ($row[$this->_gridName."$".$this->_upd_dtm_col]>$state['maxDateTime'])
+				$ret['UpdatedRows'][]=$row;
+			$inScope[] = $row[$this->_gridName."$".$this->_primary_col];
 		}
-		catch (Exception $ex) {
-			throw new Exception(print_r($ex,true), 32001);
-		}
-	
-	}
-	
-	
-	public function _deleteItem($row,$options) {
-		return $row;
-	}
-	
-	/**
-	 * delete an existing row
-	 *
-	 * @param  array $row
-	 * @param  array $options
-	 * @return null
-	 */
-	public function deleteItem($row, $state=null) {
-		//sleep(5); // Simulate a slow reply
-		try {
-			// Remove any tables references from column names.
-			$row = $this->RemoveTableRefrence($row);
-			
-			// Perform any custom deleteItem logic
-			$row=$this->_deleteItem($row,$state);
-			if ($row===null) return null;  	// if custom delete logic returns null,
-											// it handled the delete.
-			
-			// Find the exiting Row in the database to update
-			$Row=$this->find($row[$this->_primary[1]])->current();
-			$Row->delete();
-	
-			return $this->SyncDataCache($state);
-		}
-		catch (Exception $ex) {
-			throw new Exception(print_r($ex,true), 32001);
-		}
-	
+		
+		$ret['outOfScope'] = array_diff($state['activeKeys'], $inScope);
+		
+		return $ret;
 	}
 	
 }

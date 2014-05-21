@@ -77,7 +77,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 100000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -396,13 +396,33 @@
 		
 			function SyncController(data) {
 
+				
 				//console.log("sync");
-				//console.log(data);
+				console.log(data);
+				
+				var len = data['UpdatedRows'].length;
+				var indices = new Array();
+				// Loop through our updated rows
+				for (var i=0;i<len;i++) {
+					var row = self.reverseLookup["k" + data['UpdatedRows'][i][self.state.primay_col]];
+					self.buffer["k"+row]=data['UpdatedRows'][i];
+					indices.push(row);
+					if (String(self.state.maxDateTime) < String(data['UpdatedRows'][i][self.state.upd_dtm_col]))
+		            	self.state.maxDateTime=data['UpdatedRows'][i][self.state.upd_dtm_col];		
+				}
+				
+				if (indices.length > 0) {
+					onRowsChanged.notify({rows: indices}, null, self);
+				}
+				
+				
+				
+				
 //				updateLength(data);
 
 //				updateBuffers(data);
 								
-//				setTimeout(SyncRequest, self.state.pollFrequency);
+				setTimeout(SyncRequest, self.state.pollFrequency);
 			}
 			
 			function SyncFailed(data) {
@@ -422,6 +442,18 @@
 			//SyncRequest();
 			setTimeout(SyncRequest, self.state.pollFrequency);
 		}
+		
+		function getItemMetadata(row) {
+			//console.log("getItemMetadata :)"+row);
+			if (row==1)
+				return {
+					"selectable":false,
+					"focusable":false,
+					"cssClasses":"disabled"
+				};
+				
+			return null;
+		}
 
 		
 		return {
@@ -437,6 +469,7 @@
 			"onRowsChanged" : onRowsChanged,
 			//"onSync" : onSync,
 			//"addPollRequestData" : addPollRequestData,
+			"getItemMetadata" : getItemMetadata,
 			"setSort" : setSort,
 			"invalidate" : invalidate
 

@@ -1,0 +1,6 @@
+@CHARSET "UTF-8";
+
+.disabled {
+  	color: gray;
+	background: white	;
+}
