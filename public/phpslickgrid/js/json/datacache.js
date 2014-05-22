@@ -65,8 +65,7 @@
 		
 		var self = this;
 		
-		// TODO: for blockSize, look in slickgird.js at resizeCanvas and make blockSize 
-		// slightly bigger than numVisibleRows.
+		
 		var default_state = {
 				
 			gridName : 'grid', 		// Grid name used to decode column names.  Column names are (gridName)$(columnName)
@@ -77,7 +76,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 5000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -94,8 +93,11 @@
 				
 			/* Buffer status */
 			blockSize : 10,  		// Number of rows (records) to try and get per JASON RPC call.
-			bufferMax : 100,		// Maximum number of rows (records) to keep at any given time.
-												
+			bufferMax : 33,		    // Maximum number of rows (records) to keep at any given time.
+			// TODO: for bufferMax, look in slickgird.js at resizeCanvas and make bufferMax 
+			// slightly bigger than 2*numVisibleRows.									
+			
+			
 			/* Sorts and filters */
 			order_list : [],		// Current sort order
 			filters : [],  			// Current filters
@@ -111,6 +113,9 @@
 		// Complementary cache arrays:
 		self.buffer = new Array();			// Buffer of actively cached items, self.buffer["k"+row] = array of row data.
 		self.reverseLookup = new Array();	// Reverse lookup, self.reverseLookup['k'+primary key from db] = row in slickgrid.
+		
+		self.outOfScope = new Array();
+		
 		
 		// events
 		var onRowCountChanged = new Slick.Event();
@@ -195,6 +200,8 @@
 				self.state.active_buffers.push("k"+(start+i));
 				self.state.activeKeys.push(data[i][self.state.primay_col]);
 				
+				delete self.outOfScope["k"+(start+i)];
+				
 				// Track what rows the grid needs to update
 				indices.push(start+i);
 				
@@ -204,7 +211,7 @@
 						self.state.newestRecord = data[i][self.state.upd_dtm_col];
 				
 				// Maintain our buffer size limit
-				while (self.state.active_buffers.length>=self.state.blocksMax) {
+				while (self.state.active_buffers.length>=self.state.bufferMax) {
 					var toRemove=self.state.active_buffers.shift();
 					self.state.activeKeys.shift();
 					delete self.reverseLookup["k" + self.buffer[toRemove][self.state.primay_col]];
@@ -395,33 +402,54 @@
 		if (self.state.pollFrequency) {
 		
 			function SyncController(data) {
-
 				
-				//console.log("sync");
-				console.log(data);
+				// Track the grid length
+				if (self.state.gridLength!=data['gridLength']) {
+					self.state.gridLength=data['gridLength'];
+					onRowCountChanged.notify();
+				}
 				
-				var len = data['UpdatedRows'].length;
+				// Track the total length
+				if (self.state.totalRows!=data['totalRows']) {
+					self.state.totalRows=data['totalRows'];
+					onRowTotalCountChanged.notify();
+				}
+				
+				// Track rows that get updated
 				var indices = new Array();
+				
 				// Loop through our updated rows
+				var len = data['UpdatedRows'].length;				
 				for (var i=0;i<len;i++) {
 					var row = self.reverseLookup["k" + data['UpdatedRows'][i][self.state.primay_col]];
 					self.buffer["k"+row]=data['UpdatedRows'][i];
 					indices.push(row);
+					
+					// Update newest date time so we can track what to update
 					if (String(self.state.maxDateTime) < String(data['UpdatedRows'][i][self.state.upd_dtm_col]))
 		            	self.state.maxDateTime=data['UpdatedRows'][i][self.state.upd_dtm_col];		
+					
+					// Put out of scope row back into play if we get an update for it.
+					if (typeof(self.outOfScope["k"+row])!='undefined') {
+						delete(self.outOfScope["k"+row]);
+					}
 				}
 				
+				// Loop thorough buffered rows that fell out of scope.
+				var len = data['outOfScope'].length;
+				for (var i=0;i<len;i++) {
+					var row = self.reverseLookup["k"+data['outOfScope'][i]];
+					if (typeof(self.outOfScope["k"+row])=='undefined') {
+						indices.push(row);
+						self.outOfScope["k"+row]=1;
+					}
+				}
+				
+				// Tell listeners that rows have been updated
 				if (indices.length > 0) {
 					onRowsChanged.notify({rows: indices}, null, self);
 				}
-				
-				
-				
-				
-//				updateLength(data);
-
-//				updateBuffers(data);
-								
+							
 				setTimeout(SyncRequest, self.state.pollFrequency);
 			}
 			
@@ -444,13 +472,14 @@
 		}
 		
 		function getItemMetadata(row) {
-			//console.log("getItemMetadata :)"+row);
-			if (row==1)
+
+			if (typeof(self.outOfScope["k"+row])!='undefined') {
 				return {
 					"selectable":false,
 					"focusable":false,
 					"cssClasses":"disabled"
 				};
+			}
 				
 			return null;
 		}

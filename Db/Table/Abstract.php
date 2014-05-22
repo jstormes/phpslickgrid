@@ -485,9 +485,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 
 		$ret = array();
 		
-		$ret['gridLength'] = $this->getLength();      // filtered row count
-		$ret['totalRows']  = $this->getTotalLenth();  // un-filtered row count
-		$ret['UpdatedRows']=array();
+		$ret['gridLength'] 	= $this->getLength();      // filtered row count
+		$ret['totalRows']  	= $this->getTotalLenth();  // un-filtered row count
+		$ret['UpdatedRows']	= array();
+		$ret['outOfScope']	= array();
 		
 		$select = $this->buildSelect($state);
 		$select = $this->addConditionsToSelect($select);
@@ -503,8 +504,12 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$ret['UpdatedRows'][]=$row;
 			$inScope[] = $row[$this->_gridName."$".$this->_primary_col];
 		}
-		
+
+		// Find rows that have fallen out of scope.
 		$ret['outOfScope'] = array_diff($state['activeKeys'], $inScope);
+
+		// True up length for rows in the buffer but should not be.
+		$ret['gridLength'] += count($ret['outOfScope']);
 		
 		return $ret;
 	}
