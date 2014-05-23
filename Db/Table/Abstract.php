@@ -134,10 +134,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	public function initState() {
-		
-		
-
-		
+			
 		/* Set initial state */
 		$this->_gridState['gridLength']       = $this->getLength();      // filtered row count
 		$this->_gridState['sortedLength']     = $this->getLength();      // filtered row count
@@ -207,28 +204,48 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 	/**
-	 * Convert Columns to JSON.
-	 *
-	 * By: jstormes Feb 5, 2014
-	 *
+	 * Convert Column configuration to JavaScript (Not JSON!).
+	 * 
 	 * @return string
 	 */
-	public function ColumnsToJSON() {
-		
-		
+	public function ColumnsToJavaScript() {
+	
 		$this->initColumns();
 		
-		$JSON = '[';
+		// This is a hack to overcome the fact the PHP is typeless
+		// and the parameters have impled types.
+		$integers = array('width','sql_length');
+		$objects = array('editor','formatter');
+		$booleans = array('sortable','multiColumnSort');
+	
+		$dont_quote = array_merge($integers,$objects,$booleans);
 		 
-		foreach($this->_gridColumns as $Column)
-			$JSON.=json_encode($Column,JSON_FORCE_OBJECT).",\n";
-		 
-		// trim the trailing "," off the string.
-		$JSON = rtrim($JSON,",\n");
-		 
-		$JSON .= "]";
-		 
-		return $JSON;
+		$column="";
+		foreach($this->_gridColumns as $Column) {
+			//$db_column=$this->DerefrenceTable($Column->field);
+			// Don't even send hard hidden columns to browser.
+			//if (!in_array($db_column, $this->HardHidden)) {
+				if (!isset($Column->hidden)) {
+					$line="";
+					foreach($Column as $Key=>$setting) {
+						if (in_array($Key,$dont_quote))
+						if (in_array($Key, $booleans))
+							$line.=$Key.": ".($setting?'true':'false').", ";
+						else
+							$line.=$Key.": ".$setting.", ";
+						else
+							$line.=$Key.": \"".$setting."\", ";
+					}
+					$line="\t{".rtrim($line,', ')."},\n";
+					$column.=$line;
+				}
+			//}
+		}
+		$column=rtrim($column,",\n");
+	
+		$HTML = "[\n{$column}\n];\n";
+	
+		return $HTML;
 	}
 	
 	public function buildGridColumnsFromDBSchema() {
@@ -281,7 +298,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		try
 		{
-			if ($this->_MaxPrimary==null) {	
+			if ($this->_MaxPrimary===null) {	
+				$this->_MaxPrimary=0;
 				// Get maximum primary key
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
@@ -293,8 +311,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$count_select->setIntegrityCheck(false);
 				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridState['primay_col']}) as num");
 				$row = $this->fetchRow($count_select);
-				
-				$this->_MaxPrimary=$row->num;
+				if ($row->num!==null)
+					$this->_MaxPrimary=$row->num;
+				else
+					$this->_MaxPrimary=0;
 			}
 			return $this->_MaxPrimary;
 		}
@@ -331,7 +351,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getTotalLenth($state=null) {
 		try
 		{
-			if ($this->_TotalLenth==null) {
+			if ($this->_TotalLenth===null) {
 				// Get total possible rows
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
@@ -353,7 +373,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 		try
 		{
-			if ($this->_Length==null) {	
+			if ($this->_Length===null) {	
 				// Get row count for grid
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
@@ -417,6 +437,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
+			$this->log->debug("getBlcok server");
+			$this->log->debug($start);
+			$this->log->debug($length);
 			$Results=array();
 				
 			if ($start <= $state['sortedLength']) {
@@ -435,13 +458,16 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				}
 				
 				// Get rows
+				//$this->log->debug((string)$select);
 				$Results = $this->fetchAll($select)->toArray();
 	
 				// If we get less than a full block
 				// see if we have any unsorted rows to pad out
 				// the block.
+				//$this->log->debug(count($Results));
 				if (count($Results)<$length) {
 	
+					//$this->log->debug("after sorted length ".$length);
 					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
 						
@@ -453,18 +479,19 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 					$UnsortedResults = $this->fetchAll($select)->toArray();
 	
+					
 					foreach($UnsortedResults as $row)
 						array_push($Results, $row);
 				}
 			}
 			else {
 				// Get unsorted block
-					
+					$this->log->debug("unsroted ".$state['sortedLength']." ".$start);
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
 	
 				$select->where($this->_primary_col."> ?", $state['sortedMaxPrimary']);
-				$select->limit($length,$state['sortedLength']-$start);
+				$select->limit($length,$start-$state['sortedLength']);
 					
 				// Order by primary
 				$select->order(array($this->_primary_col));
@@ -512,6 +539,162 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$ret['gridLength'] += count($ret['outOfScope']);
 		
 		return $ret;
+	}
+	
+	private function AddTableRefrence($row) {
+	
+		$info=$this->info();
+		$Row = array();
+	
+		foreach($row as $Key=>$Value) {
+			$Key = str_replace($info['name']."$", "", $Key);
+			$Row[$info['name']."$".$Key]=$Value;
+		}
+	
+		return $Row;
+	}
+	
+	private function RemoveTableRefrence($row) {
+	
+		$info=$this->info();
+		$Row = array();
+	
+		foreach($row as $Key=>$Value) {
+			$Key = str_replace($info['name']."$", "", $Key);
+			$Row[$Key]=$Value;
+		}
+	
+		return $Row;
+	}
+	
+	public function _updateItem($row, $state) {
+		return $row;
+	}
+	
+	/**
+	 * update an existing row
+	 *
+	 * @param  array $row
+	 * @param  array $options
+	 * @return array
+	 */
+	public function updateItem($row, $state=null) {
+	
+		try {
+			// Remove any tables references from column names.
+			$row = $this->RemoveTableRefrence($row);
+				
+			if ($this->_upd_dtm_col !== null)
+				$row[$this->_upd_dtm_col]=null;
+				
+			// Perform any updateItem logic
+			$row = $this->_updateItem($row, $state);
+			if ($row===null) return null;  // if null update logic short circuited update.
+				
+			// Find the exiting Row in the database to update
+			$Row=$this->find($row[$this->_primary[1]])->current();
+				
+			// Copy values from the array to the existing row object.
+			foreach($row as $Key=>$Value) {
+				if (isset($Row[$Key])) {
+					if ($Value=='null') $Value=null;
+					$Row[$Key]=$Value;
+				}
+			}
+	
+			$Row->save();
+			
+			// return any rows updated from the last time this was called.
+			return $this->SyncDataCache($state);
+		}
+		catch (Exception $ex) {
+			throw new Exception(print_r($ex,true), 32001);
+		}
+	
+	}
+	
+	public function _addItem($row,$state) {
+		return $row;
+	}
+	
+	/**
+	 * add a new row
+	 *
+	 * @param  array $row
+	 * @param  array $options
+	 * @return null
+	 */
+	public function addItem($row,$state=null) {
+	
+		try {
+			// Remove any tables references from column names.
+			$row=$this->RemoveTableRefrence($row);
+				
+			// Perform any custom addItem logic
+			$row=$this->_addItem($row,$state);
+			if ($row===null) return null;  	// if custom add logic returns null,
+			// it handled the add.
+	
+			// Create the new row object
+			$NewRow=$this->createRow();
+	
+			// Copy values from the array to the new row object.
+			foreach($row as $Key=>$Value) {
+				if (isset($NewRow[$Key])) {
+					if ($Value=='null') $Value=null;
+					$NewRow[$Key]=$Value;
+				}
+			}
+				
+			// Save the new row.
+			$key=$NewRow->save();
+			// Save the row back into the database.
+			
+			$ret = $NewRow->toArray();
+			$this->log->debug($ret);
+			// Pass the new row array back to javascript.
+			return $this->AddTableRefrence($ret);
+			//return $this->SyncDataCache($state);
+		}
+		catch (Exception $ex) {
+			throw new Exception(print_r($ex,true), 32001);
+		}
+	
+	}
+	
+	
+	public function _deleteItem($row,$options) {
+		return $row;
+	}
+	
+	/**
+	 * delete an existing row
+	 *
+	 * @param  array $row
+	 * @param  array $options
+	 * @return null
+	 */
+	public function deleteItem($row, $state=null) {
+		//sleep(5); // Simulate a slow reply
+		try {
+			// Remove any tables references from column names.
+			$row = $this->RemoveTableRefrence($row);
+				
+			// Perform any custom deleteItem logic
+			$row=$this->_deleteItem($row,$state);
+			if ($row===null) return null;  	// if custom delete logic returns null,
+			// it handled the delete.
+				
+			// Find the exiting Row in the database to update
+			$Row=$this->find($row[$this->_primary[1]])->current();
+			$Row->delete();
+	
+			return $this->SyncDataCache($state);
+		}
+		catch (Exception $ex) {
+			throw new Exception(print_r($ex,true), 32001);
+		}
+	
 	}
 	
 }

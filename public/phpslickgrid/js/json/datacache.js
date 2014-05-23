@@ -76,7 +76,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 5000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 0,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -92,8 +92,8 @@
 			sortedMaxPrimary : null,// The maximum primary key for the sorted portion of the buffer.
 				
 			/* Buffer status */
-			blockSize : 10,  		// Number of rows (records) to try and get per JASON RPC call.
-			bufferMax : 33,		    // Maximum number of rows (records) to keep at any given time.
+			blockSize : 100,  		// Number of rows (records) to try and get per JASON RPC call.
+			bufferMax : 300,		    // Maximum number of rows (records) to keep at any given time.
 			// TODO: for bufferMax, look in slickgird.js at resizeCanvas and make bufferMax 
 			// slightly bigger than 2*numVisibleRows.									
 			
@@ -157,33 +157,6 @@
 		 * (self.state.totalRows).
 		 */
 		function getLength() {
-//			var now = new Date();
-//			
-//			// TODO:Refactor this back to poll on light stale!!!
-//
-//			// If it has been more than 800ms (0.8 second)
-//			// trigger the callback.
-//			if ((now - self.length_lastcall) > 800) {
-//				self.length_lastcall = now;
-//				// Call JSON service for getLength passing self.options as
-//				// options.
-//				self.service.getLength(self.state, {
-//					'success' : function(data) {	
-//						// If the length has changed update the listeners.
-//						if (data.gridLength!=self.state.gridLength) {
-//							self.state.gridLength = (data.gridLength - 0);
-//							// Trigger notification for grid length change
-//							onRowCountChanged.notify();
-//						}
-//						// If the total row count changed update listeners.
-//						if (data.totalRows!=self.state.totalRows) {
-//							self.state.totalRows = (data.totalRows - 0);
-//							// Trigger notification for grid length change
-//							onRowTotalCountChanged.notify();
-//						}
-//					}
-//				});
-//			}
 			return (self.state.gridLength - 0);
 		}
 		
@@ -235,12 +208,21 @@
 			var fetchSize=0;
 			var start = row;
 			
-			
+			if (row>=self.state.gridLength) {
+				console.log("Getting new row");
+				console.log(row);
+				//return [];
+			}
+			//console.log("getting row "+row);
+			console.log(typeof(self.buffer["k"+row]));
 			if (typeof self.buffer["k"+row] == 'undefined') {
+				console.log("looking for buffer");
 				for( var i=0; i<self.state.blockSize; i++) {
 					if (typeof self.buffer["k"+(row+i)] == 'undefined') {
-						self.buffer["k"+(row+i)] = new Array();
-						fetchSize++;
+						if ((row+i)<self.state.gridLength) {
+							self.buffer["k"+(row+i)] = new Array();
+							fetchSize++;
+						}
 					}
 					else {
 						if ((start-1) > 0) {
@@ -256,11 +238,13 @@
 							break;
 					}
 				}
-				self.service.getBlock(start, (fetchSize), self.state, {
-					'success' : function(data) {
-						getBlock(start, data);
-					}
-				});
+				console.log("getting block "+start+" "+fetchSize);
+				if (fetchSize!=0)
+					self.service.getBlock(start, (fetchSize), self.state, {
+						'success' : function(data) {
+							getBlock(start, data);
+						}
+					});
 			}
 			// return whatever we have.
 			return self.buffer["k"+row];
@@ -269,17 +253,16 @@
 		
 		function invalidate() {
 						
-			self.service.resetState(self.state, {
-				'success' : function(state) {	
-					self.state = $.extend(true, {}, self.state, state);
-				}
-			});			
+			self.service.setAsync(false);
+			var newState = self.service.resetState(self.state);
+			self.state = $.extend(true, {}, self.state, newState);
 		
 			self.state.active_buffers 	= [];
 			self.state.activeKeys 		= [];		
 			
 			self.buffer 		= new Array();
 			self.reverseLookup 	= new Array();
+			self.service.setAsync(true);
 		}
 
 		function setSort(sortarray) {
@@ -291,111 +274,96 @@
 			self.service.setAsync(false);
 			var data = self.service.updateItem(item, self.state);
 			// update buffers
-			updateBuffers(data);
+			SyncData(data);
 			self.service.setAsync(true);
 		}
 
 		function addItem(item) {
 			// Don't let the user move on until the row has been saved.  
 			self.service.setAsync(false);
-			//self.lengthdate=0; // force new length
-			var data = self.service.addItem(item, self.state);
-			//lengthAction(data);
-			updateBuffers(data);
+			
+			var NewRow = self.service.addItem(item, self.state);
+			console.log(NewRow);
+			console.log(self.state.gridLength);
+			self.buffer["k"+(self.state.gridLength)] = NewRow;
+			self.reverseLookup["k" + NewRow[self.state.primay_col]]=(self.state.gridLength);
+			self.state.active_buffers.push("k"+(self.state.gridLength));
+			self.state.activeKeys.push(NewRow[self.state.primay_col]);
+			console.log(self.buffer["k"+(self.state.gridLength)]);
+			delete self.outOfScope["k"+(self.state.gridLength)];
+			//onRowsChanged.notify({rows: [parseInt(self.state.gridLength)+1]}, null, self);
+			//var start = parseInt(self.state.gridLength);
+			//console.log("start = "+start);
+			//var fetchSize=1;
+			//var data = self.service.getBlock(start, (fetchSize), self.state);
+			//getBlock(start, data);
+			// update buffers
+			//SyncData(data);
+			
 			self.service.setAsync(true);
+			onRowsChanged.notify({rows: [parseInt(self.state.gridLength)]}, null, self);
+			self.state.gridLength++;
+			onRowCountChanged.notify();
+			
 		}
 		
 		function deleteItem(item) {
 			self.service.setAsync(false);
 			var data = self.service.deleteItem(item, self.state);
-			//lengthAction(data);
-			updateBuffers(data);
+			// update buffers
+			SyncData(data);
 			self.service.setAsync(true);
 		}		
 		
-		
-		function updateBuffers(data) {
+		function SyncData(data) {
 			
-			// Update the records in our buffers
-			var len = data['updatedRows'].length;
-			var indices = new Array();
-			// Loop through our updated rows
-			for (var i=0;i<len;i++) {
-				data['updatedCells'] = new Array();
-				
-				// If new row give it a place to live and update gridLength
-				if (data['updatedRows'][i][self.state.primay_col]>self.state.maxPrimary) {
-					// Give our new row a place to live at the end of the buffer.
-					self.reverseLookup["k" + data['updatedRows'][i][self.state.primay_col]] = ++self.state.gridLength;
-					self.state.maxPrimary = data['updatedRows'][i][self.state.primay_col];
-					LengthUpdated = true;
-				}
-				
-				// if we can lookup the slickgrid row then update it, else ignore it.
-				if (typeof self.reverseLookup["k"+data['updatedRows'][i][self.state.primay_col]]!='undefined') {
-					// get the slickgrid index (idx)
-					var row=self.reverseLookup["k"+data['updatedRows'][i][self.state.primay_col]];
-					
-					
-
-					// calculate the current block
-					//var block = Math.floor(idx / self.state.blockSize);
-					// calculate the index inside the current block
-					//var blockIdx = idx % self.state.blockSize;
-					
-					var offset_row 	= row;		// Default to top row offset.
-					var type 		= 't';	// Default to top buffers.
-					
-					// If row was created after our last sort/refresh
-					// switch to bottom buffers.
-					if (row >= self.state.top_length) {
-						// Calculate the bottom buffer
-						offset_row = row - self.state.top_length;
-						type = 'b';
-						//console.log("Bottom buffer add");
-					}
-							
-					var block = type+(Math.floor(offset_row / self.state.blockSize));
-					var idx = offset_row % self.state.blockSize;
-					
-					
-		            // update the row in our cache
-		            // find the updated cell
-		            //console.log(idx);
-					
-					//TODO: Refactor this?
-		            //data['updatedCells'].push({idx:idx, columns:updated_cell(self.pages[block].data[blockIdx],data['updatedRows'][i])});
-		            //console.log(updated_cell(self.pages[block].data[blockIdx],data['updatedRows'][i]));
-		            //console.log(self.pages[block].data[blockIdx]);
-		            
-		            // Make sure we don't run off the end of a block 
-		            // due to deletes or un-deletes.
-		            if (typeof(self.pages[block])!='undefined') {
-		            	self.pages[block].data[idx]=data['updatedRows'][i];
-		            	// Track the grid rows we update 
-						indices.push(row);
-		            }
-		            	            
-				}
-				// update our newest record if needed.
-				if (String(self.state.newestRecord) < String(data['updatedRows'][i][self.state.upd_dtm_col]))
-	            	self.state.newestRecord=data['updatedRows'][i][self.state.upd_dtm_col];			           
-	            
-			}
-			
-			// Tell all subscribers (ie slickgrid) the data change changed for this block	
-        	if (indices.length>0)
-        		onRowsChanged.notify({rows: indices}, null, self);
-		}
-		
-		function updateLength(data) {	
-			if (self.state.gridLength!=data['datalength']['gridLength']) {
-				
-				self.state.gridLength=data['datalength']['gridLength'];
-				self.length_lastcall = new Date();
-				
+			// Track the grid length
+			if (self.state.gridLength!=data['gridLength']) {
+				self.state.gridLength=data['gridLength'];
+				console.log("Length changed");
 				onRowCountChanged.notify();
 			}
+			
+			// Track the total length
+			if (self.state.totalRows!=data['totalRows']) {
+				self.state.totalRows=data['totalRows'];
+				onRowTotalCountChanged.notify();
+			}
+			
+			// Track rows that get updated
+			var indices = new Array();
+			
+			// Loop through our updated rows
+			var len = data['UpdatedRows'].length;				
+			for (var i=0;i<len;i++) {
+				var row = self.reverseLookup["k" + data['UpdatedRows'][i][self.state.primay_col]];
+				self.buffer["k"+row]=data['UpdatedRows'][i];
+				indices.push(row);
+				
+				// Update newest date time so we can track what to update
+				if (String(self.state.maxDateTime) < String(data['UpdatedRows'][i][self.state.upd_dtm_col]))
+	            	self.state.maxDateTime=data['UpdatedRows'][i][self.state.upd_dtm_col];		
+				
+				// Put out of scope row back into play if we get an update for it.
+				if (typeof(self.outOfScope["k"+row])!='undefined') {
+					delete(self.outOfScope["k"+row]);
+				}
+			}
+			
+			// Loop thorough buffered rows that fell out of scope.
+			var len = data['outOfScope'].length;
+			for (var i=0;i<len;i++) {
+				var row = self.reverseLookup["k"+data['outOfScope'][i]];
+				if (typeof(self.outOfScope["k"+row])=='undefined') {
+					indices.push(row);
+					self.outOfScope["k"+row]=1;
+				}
+			}
+			
+			// Tell listeners that rows have been updated
+			if (indices.length > 0) {
+				onRowsChanged.notify({rows: indices}, null, self);
+			}			
 		}
 		
 		// If we have a pollFrequency should we poll the server.
@@ -403,52 +371,7 @@
 		
 			function SyncController(data) {
 				
-				// Track the grid length
-				if (self.state.gridLength!=data['gridLength']) {
-					self.state.gridLength=data['gridLength'];
-					onRowCountChanged.notify();
-				}
-				
-				// Track the total length
-				if (self.state.totalRows!=data['totalRows']) {
-					self.state.totalRows=data['totalRows'];
-					onRowTotalCountChanged.notify();
-				}
-				
-				// Track rows that get updated
-				var indices = new Array();
-				
-				// Loop through our updated rows
-				var len = data['UpdatedRows'].length;				
-				for (var i=0;i<len;i++) {
-					var row = self.reverseLookup["k" + data['UpdatedRows'][i][self.state.primay_col]];
-					self.buffer["k"+row]=data['UpdatedRows'][i];
-					indices.push(row);
-					
-					// Update newest date time so we can track what to update
-					if (String(self.state.maxDateTime) < String(data['UpdatedRows'][i][self.state.upd_dtm_col]))
-		            	self.state.maxDateTime=data['UpdatedRows'][i][self.state.upd_dtm_col];		
-					
-					// Put out of scope row back into play if we get an update for it.
-					if (typeof(self.outOfScope["k"+row])!='undefined') {
-						delete(self.outOfScope["k"+row]);
-					}
-				}
-				
-				// Loop thorough buffered rows that fell out of scope.
-				var len = data['outOfScope'].length;
-				for (var i=0;i<len;i++) {
-					var row = self.reverseLookup["k"+data['outOfScope'][i]];
-					if (typeof(self.outOfScope["k"+row])=='undefined') {
-						indices.push(row);
-						self.outOfScope["k"+row]=1;
-					}
-				}
-				
-				// Tell listeners that rows have been updated
-				if (indices.length > 0) {
-					onRowsChanged.notify({rows: indices}, null, self);
-				}
+				SyncData(data);
 							
 				setTimeout(SyncRequest, self.state.pollFrequency);
 			}
@@ -496,11 +419,10 @@
 			"onRowCountChanged" : onRowCountChanged,
 			"onRowTotalCountChanged" : onRowTotalCountChanged,
 			"onRowsChanged" : onRowsChanged,
-			//"onSync" : onSync,
-			//"addPollRequestData" : addPollRequestData,
 			"getItemMetadata" : getItemMetadata,
 			"setSort" : setSort,
-			"invalidate" : invalidate
+			"invalidate" : invalidate,
+			"self" : self
 
 		};
 	}

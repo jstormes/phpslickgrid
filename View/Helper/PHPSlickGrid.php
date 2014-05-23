@@ -49,7 +49,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		//$HTML .= "var {$GridName}TotalRows = ".$Table->getLength(array()).";\n\n";
 		
 		// Render the column configuration to the browser:
-		$HTML .= "var {$GridName}Columns = ".$Table->ColumnsToJSON().";\n\n";
+		//$HTML .= "var {$GridName}Columns = ".$Table->ColumnsToJSON().";\n\n";
+		$HTML .= "var {$GridName}Columns = ".$Table->ColumnsToJavaScript().";\n\n";
 				
 		// Render the grid configuration to the browser:
 		$HTML .= "var {$GridName}State = ".$Table->StateToJSON().";\n\n";
@@ -166,8 +167,16 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "// Wire up row add \n";
 		$HTML .= "// ****************************************************************\n";
 		$HTML .= "{$GridName}.onAddNewRow.subscribe(function(e, args) {\n";
+		$HTML .= "";
+//		$HTML .= "  console.log({$GridName}Data.getLength());\n";
+//		$HTML .= "  console.log(args);\n";
 		$HTML .= "  {$GridName}Data.addItem(args.item); // Send new row to server\n";
-		$HTML .= "  {$GridName}Data.invalidate();\n";
+//		$HTML .= "  {$GridName}Data.invalidate({$GridName}Data.getLength()+2);\n";
+//		$HTML .= "  console.log({$GridName}Data.getLength());\n";
+		
+//		$HTML .= "  {$GridName}Data.getItem({$GridName}Data.getLength()+3);\n";
+//		$HTML .= "  {$GridName}.invalidateRow({$GridName}Data.getLength()-1);\n";
+//		$HTML .= "  {$GridName}.render();\n";
 		$HTML .= "});\n\n";
 	
 		return $HTML;
