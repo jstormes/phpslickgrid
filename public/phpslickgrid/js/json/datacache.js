@@ -76,7 +76,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 0,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 2500,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -95,7 +95,7 @@
 			blockSize : 100,  		// Number of rows (records) to try and get per JASON RPC call.
 			bufferMax : 300,		    // Maximum number of rows (records) to keep at any given time.
 			// TODO: for bufferMax, look in slickgird.js at resizeCanvas and make bufferMax 
-			// slightly bigger than 2*numVisibleRows.									
+			// slightly bigger than 3*numVisibleRows.									
 			
 			
 			/* Sorts and filters */
@@ -160,6 +160,32 @@
 			return (self.state.gridLength - 0);
 		}
 		
+		function AddItemToBuffer(row, item){
+			
+			//force row to be an integer
+			row=parseInt(row);
+			
+			// Add to data, reverse lookup and stack
+			self.buffer["k"+row]=item;
+			self.reverseLookup["k" + item[self.state.primay_col]]=row;
+			self.state.active_buffers.push("k"+row);
+			self.state.activeKeys.push(item[self.state.primay_col]);
+			
+			// put row into scope
+			delete self.outOfScope["k"+row];
+			
+			// Maintain our buffer size limit
+			while (self.state.active_buffers.length>=self.state.bufferMax) {
+				var toRemove=self.state.active_buffers.shift();
+				self.state.activeKeys.shift();
+				delete self.reverseLookup["k" + self.buffer[toRemove][self.state.primay_col]];
+				delete self.buffer[toRemove];
+				
+				// delete any out of scope refrence
+				delete self.outOfScope["k" + toRemove];
+			}
+		}
+		
 		function getBlock(start, data) {
 		
 			// Create array of updated indices
@@ -167,13 +193,8 @@
 			
 			var len = data.length;
 			for ( var i = 0; i < len; i++) {
-				// Add to data, reverse lookup and stack
-				self.buffer["k"+(start+i)]=data[i];
-				self.reverseLookup["k" + data[i][self.state.primay_col]]=(start+i);
-				self.state.active_buffers.push("k"+(start+i));
-				self.state.activeKeys.push(data[i][self.state.primay_col]);
 				
-				delete self.outOfScope["k"+(start+i)];
+				AddItemToBuffer(start+i, data[i]);
 				
 				// Track what rows the grid needs to update
 				indices.push(start+i);
@@ -183,13 +204,6 @@
 					if (String(data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
 						self.state.newestRecord = data[i][self.state.upd_dtm_col];
 				
-				// Maintain our buffer size limit
-				while (self.state.active_buffers.length>=self.state.bufferMax) {
-					var toRemove=self.state.active_buffers.shift();
-					self.state.activeKeys.shift();
-					delete self.reverseLookup["k" + self.buffer[toRemove][self.state.primay_col]];
-					delete self.buffer[toRemove];
-				}
 			}
 			
 			// clean up
@@ -208,15 +222,8 @@
 			var fetchSize=0;
 			var start = row;
 			
-			if (row>=self.state.gridLength) {
-				console.log("Getting new row");
-				console.log(row);
-				//return [];
-			}
-			//console.log("getting row "+row);
-			console.log(typeof(self.buffer["k"+row]));
 			if (typeof self.buffer["k"+row] == 'undefined') {
-				console.log("looking for buffer");
+
 				for( var i=0; i<self.state.blockSize; i++) {
 					if (typeof self.buffer["k"+(row+i)] == 'undefined') {
 						if ((row+i)<self.state.gridLength) {
@@ -238,7 +245,7 @@
 							break;
 					}
 				}
-				console.log("getting block "+start+" "+fetchSize);
+				
 				if (fetchSize!=0)
 					self.service.getBlock(start, (fetchSize), self.state, {
 						'success' : function(data) {
@@ -281,26 +288,13 @@
 		function addItem(item) {
 			// Don't let the user move on until the row has been saved.  
 			self.service.setAsync(false);
-			
 			var NewRow = self.service.addItem(item, self.state);
-			console.log(NewRow);
-			console.log(self.state.gridLength);
-			self.buffer["k"+(self.state.gridLength)] = NewRow;
-			self.reverseLookup["k" + NewRow[self.state.primay_col]]=(self.state.gridLength);
-			self.state.active_buffers.push("k"+(self.state.gridLength));
-			self.state.activeKeys.push(NewRow[self.state.primay_col]);
-			console.log(self.buffer["k"+(self.state.gridLength)]);
-			delete self.outOfScope["k"+(self.state.gridLength)];
-			//onRowsChanged.notify({rows: [parseInt(self.state.gridLength)+1]}, null, self);
-			//var start = parseInt(self.state.gridLength);
-			//console.log("start = "+start);
-			//var fetchSize=1;
-			//var data = self.service.getBlock(start, (fetchSize), self.state);
-			//getBlock(start, data);
-			// update buffers
-			//SyncData(data);
 			
+			// update buffers
+			AddItemToBuffer(self.state.gridLength, NewRow);
 			self.service.setAsync(true);
+			
+			// Update the grid.
 			onRowsChanged.notify({rows: [parseInt(self.state.gridLength)]}, null, self);
 			self.state.gridLength++;
 			onRowCountChanged.notify();
@@ -320,7 +314,6 @@
 			// Track the grid length
 			if (self.state.gridLength!=data['gridLength']) {
 				self.state.gridLength=data['gridLength'];
-				console.log("Length changed");
 				onRowCountChanged.notify();
 			}
 			

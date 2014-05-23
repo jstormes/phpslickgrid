@@ -437,13 +437,11 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
-			$this->log->debug("getBlcok server");
-			$this->log->debug($start);
-			$this->log->debug($length);
+
 			$Results=array();
 				
 			if ($start <= $state['sortedLength']) {
-				//$this->log->debug("in sorted length");
+
 				// Build core select
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
@@ -458,16 +456,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				}
 				
 				// Get rows
-				//$this->log->debug((string)$select);
 				$Results = $this->fetchAll($select)->toArray();
 	
 				// If we get less than a full block
 				// see if we have any unsorted rows to pad out
 				// the block.
-				//$this->log->debug(count($Results));
 				if (count($Results)<$length) {
 	
-					//$this->log->debug("after sorted length ".$length);
 					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
 						
@@ -486,7 +481,6 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			}
 			else {
 				// Get unsorted block
-					$this->log->debug("unsroted ".$state['sortedLength']." ".$start);
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
 	
@@ -647,14 +641,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			}
 				
 			// Save the new row.
-			$key=$NewRow->save();
-			// Save the row back into the database.
-			
-			$ret = $NewRow->toArray();
-			$this->log->debug($ret);
+			$NewRow->save();
+
 			// Pass the new row array back to javascript.
-			return $this->AddTableRefrence($ret);
-			//return $this->SyncDataCache($state);
+			return $this->AddTableRefrence($NewRow->toArray());
 		}
 		catch (Exception $ex) {
 			throw new Exception(print_r($ex,true), 32001);
