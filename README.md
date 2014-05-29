@@ -20,3 +20,8 @@ Ideas:
 
 1) Make grids consumable by MS-Office:
 http://office.microsoft.com/en-us/excel-help/get-external-data-from-a-web-page-HA010218472.aspx#BMmake_a_web_page_redirect_a_web_query_
+
+This grid is just another place for the users stuff ;)
+
+www.youtube.com/watch?v=JLoge6QzcGY
+

@@ -1,4 +1,31 @@
 <?php
+
+/**
+ * An interesting select, get row number:
+ * 
+ * 
+select * from (SELECT @row_number:=@row_number+1 AS row_number, grid_id
+FROM `grid`
+JOIN    (SELECT @row_number := 0) r) as t
+where row_number=2
+
+
+Another interesting select get row number by grid_id:
+
+
+select * from (SELECT @row_number:=@row_number+1 AS row_number, grid_id,A
+FROM `grid`
+JOIN    (SELECT @row_number := 0) r
+order by A)
+as t
+where grid_id=64
+
+Could be used with grid.scrollCellIntoView(100,0) to find the active row on resort.
+
+ * @author jstormes
+ *
+ */
+
 class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 {
 	/**
@@ -177,6 +204,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$state['totalRows']        = $this->getTotalLenth($state);  // un-filtered row count
 			$state['sortedMaxPrimary'] = $this->getMaxPrimary($state);  // filtered max primary key
 			$state['maxDateTime']      = $this->getMaxDateTime($state); // filtered max date time
+			
+			// Lookup row from column
 			
 			return $state;
 		}
@@ -414,6 +443,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function addConditionsToSelect(Zend_Db_Select $select) {
 		return $select;
 	}
+	
 	
 	/**
 	 * Returns a contiguous block of records based on the current

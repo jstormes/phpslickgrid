@@ -64,8 +64,7 @@
 	function DataCache(inital_state) {
 		
 		var self = this;
-		
-		
+				
 		var default_state = {
 				
 			gridName : 'grid', 		// Grid name used to decode column names.  Column names are (gridName)$(columnName)
@@ -76,7 +75,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 2500,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 250000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -104,18 +103,46 @@
 				
 			/* List of active rows */
 			active_buffers : [],	// List of actively cached slickgrid rows
-			activeKeys : []			// List of primary keys currently being buffered.
+			activeKeys : [],		// List of primary keys currently being buffered.
+		
+			/* Local Storage */
+			localStorage : {}
+		};
+		
+		var localStorageDefault = {
+			sort : [],
+			filters : [], 
+			activeRow : {
+				row : 0,
+				cell : 0,
+				key : null
+			}
 		};
 			
 		// Prime the state default state + initial state from server.
 		self.state = $.extend(true, {}, default_state, inital_state);
 		
+		// Merge the any saved local storage with the default (Saved trumps default)
+		var localStorage = store.get(self.state.gridName);
+		if (localStorage != undefined)
+			localStorage = $.extend(true, {}, localStorageDefault, localStorage);
+		else 
+			localStorage = localStorageDefault;
+		
+		// Merge the saved local storage with the initial state (initial trumps saved)
+		self.state.localStorage = $.extend(true, {}, localStorage, self.state.localStorage);
+		
+		// Save the local storage state
+		store.set(self.state.gridName, self.state.localStorage);
+		
+		setSort(self.state.localStorage.sort);
+		
 		// Complementary cache arrays:
 		self.buffer = new Array();			// Buffer of actively cached items, self.buffer["k"+row] = array of row data.
 		self.reverseLookup = new Array();	// Reverse lookup, self.reverseLookup['k'+primary key from db] = row in slickgrid.
 		
+		// Array of items that fell out of scope during view.
 		self.outOfScope = new Array();
-		
 		
 		// events
 		var onRowCountChanged = new Slick.Event();
@@ -269,11 +296,52 @@
 			
 			self.buffer 		= new Array();
 			self.reverseLookup 	= new Array();
+			
 			self.service.setAsync(true);
+		}
+		
+		function getSort() {
+			return self.state.localStorage.sort;
 		}
 
 		function setSort(sortarray) {
-			self.state.order_list = sortarray;
+			
+			//console.log("setting sort");
+			
+			self.state.localStorage.sort = sortarray;
+			store.set(self.state.gridName , self.state.localStorage);
+			
+			self.state.order_list= [];
+			
+			for (var i = 0; i < sortarray.length; i++) {
+				if (sortarray[i].sortAsc)
+					self.state.order_list.push(self.state.gridName+"$"+sortarray[i].columnId);
+				else
+					self.state.order_list.push(self.state.gridName+"$"+sortarray[i].columnId+' desc');
+			}
+		}
+		
+		function setActive(row,cell) {
+			self.state.localStorage.activeRow.row=row;
+			self.state.localStorage.activeRow.cell=cell;
+			if (self.buffer["k"+row]!=undefined) 
+				self.state.localStorage.activeRow.key=self.buffer["k"+row][self.state.primay_col];
+			else
+				self.state.localStorage.activeRow.key=null;
+			
+			store.set(self.state.gridName , self.state.localStorage);
+		}
+		
+		function getActiveRow() {
+			return self.state.localStorage.activeRow.row;
+		}
+		
+		function getActiveCell() {
+			return self.state.localStorage.activeRow.cell;
+		}
+		
+		function getActiveKey() {
+			return self.state.localStorage.activeRow.key;
 		}
 		
 		function updateItem(item) {
@@ -414,6 +482,11 @@
 			"onRowsChanged" : onRowsChanged,
 			"getItemMetadata" : getItemMetadata,
 			"setSort" : setSort,
+			"getSort" : getSort,
+			"setActive" : setActive,
+			"getActiveRow" : getActiveRow,
+			"getActiveCell" : getActiveCell,
+			"getActiveKey" : getActiveKey,
 			"invalidate" : invalidate,
 			"self" : self
 
