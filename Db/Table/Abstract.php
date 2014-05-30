@@ -190,6 +190,33 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 	}
 	
+	public function LookupRowFromKey($key, $state=null) {
+		/*
+		 * select * from (SELECT @row_number:=@row_number+1 AS row_number, grid_id,A
+FROM `grid`
+JOIN    (SELECT @row_number := 0) r
+order by A)
+as t
+where grid_id=64
+		 */
+		$select = $this->buildSelectWithRow();
+		$select = $this->addConditionsToSelect($select);
+		// Build our order by
+		foreach($state['order_list'] as $orderby) {
+			$select->order($orderby);
+		}
+		
+		$count_select = $this->select();
+		$count_select->setIntegrityCheck(false);
+		$count_select->from(new Zend_Db_Expr("(".$select.")"), "*");
+		$count_select->where("{$this->_gridState['primay_col']} = ?",$key);
+		$row = $this->fetchRow($count_select);
+		
+		return $row['row_number'];
+		
+		//$this->log->debug($row['row_number']);
+	}
+	
 	/**
 	 * 
 	 * @param array $state
@@ -206,12 +233,42 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$state['maxDateTime']      = $this->getMaxDateTime($state); // filtered max date time
 			
 			// Lookup row from column
-			
+			if ($state['localStorage']['activeRow']['key']!=null)
+				$state['localStorage']['activeRow']['row']=$this->LookupRowFromKey($state['localStorage']['activeRow']['key'],$state);
+			//$this->log->debug($state['localStorage']['activeRow']['key']);
 			return $state;
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
 		}
+	}
+	
+	public function buildSelectWithRow($state=null) {
+	
+		/*
+		 * select * from (SELECT @row_number:=@row_number+1 AS row_number, grid_id,A
+		 		* FROM `grid`
+		 		* JOIN    (SELECT @row_number := 0) r
+		 		* order by A)
+		* as t
+		* where grid_id=64
+		*/
+		// Make column aliases - "(table name).(column name) as (table name)$(column name)"
+		$column = array();
+		foreach($this->_info['cols'] as $key=>$value) {
+			$columns[$this->_info['name']."$".$value]=$this->_info['name'].".".$value;
+		}
+		$columns['row_number']="(@row_number:=@row_number+1)";
+	
+		$select = $this->select();
+		$select->setIntegrityCheck(false);
+		$select->from(array($this->_info['name'] => $this->_info['name']),$columns);
+	
+		$select->join(array('r' => new Zend_Db_Expr('(SELECT @row_number := -1)')),'');
+		
+	
+	
+		return $select;
 	}
 	
 	public function StateToJSON() {
@@ -422,6 +479,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			throw new Exception($ex, 32001);
 		}
 	}
+	
+
 	
 	public function buildSelect($state=null) {
 	

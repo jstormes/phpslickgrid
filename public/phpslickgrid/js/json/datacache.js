@@ -297,6 +297,8 @@
 			self.buffer 		= new Array();
 			self.reverseLookup 	= new Array();
 			
+			console.log(self.state.localStorage.activeRow);
+			
 			self.service.setAsync(true);
 		}
 		
@@ -324,11 +326,14 @@
 		function setActive(row,cell) {
 			self.state.localStorage.activeRow.row=row;
 			self.state.localStorage.activeRow.cell=cell;
-			if (self.buffer["k"+row]!=undefined) 
-				self.state.localStorage.activeRow.key=self.buffer["k"+row][self.state.primay_col];
-			else
+			if (self.buffer["k"+row]!=undefined) {
+				if (self.buffer["k"+row][self.state.primay_col]!=undefined)
+					self.state.localStorage.activeRow.key=self.buffer["k"+row][self.state.primay_col];
+			}
+			else {
 				self.state.localStorage.activeRow.key=null;
-			
+			}
+			console.log(self.state.localStorage.activeRow);
 			store.set(self.state.gridName , self.state.localStorage);
 		}
 		
