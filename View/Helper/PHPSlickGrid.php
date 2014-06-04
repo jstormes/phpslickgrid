@@ -60,12 +60,6 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
  		// Set sort from state
  		$HTML .= "{$GridName}.setSortColumns({$GridName}Data.getSort());\n";
- 		
- 		// Set active cell
- 		$HTML .= "if ({$GridName}Data.getActiveKey()!=null)\n";
- 		$HTML .= "  {$GridName}.setActiveCell({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
- 		
- 		// Set active from state
 			
  		// Render any needed Dynamic Java Script:
  		$HTML .= $this->DynamicJS();
@@ -95,6 +89,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= $this->onAddNewRow();
 		$HTML .= $this->onActiveCellChanged();
 		
+		$HTML .=  $this->onActiveKeyLoaded();
+		
 		return $HTML;
 	}
 	
@@ -103,17 +99,29 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$GridName = $this->Table->_gridName;
 		
 		$HTML  = "// ****************************************************************\n";
-		$HTML .= "// Wire up the rows count changes from the data cache to the grid\n";
+		$HTML .= "// Wire active cell selected from the grid to the data cache\n";
 		$HTML .= "// ****************************************************************\n";
 		$HTML .= "{$GridName}.onActiveCellChanged.subscribe(function (e, args) { \n";
-		$HTML .= "    console.log('onActiveCellChanged');\n";
 		$HTML .= "    {$GridName}Data.setActive(args.row,args.cell);\n";
-//		$HTML .= "    {$GridName}LocalStorage.ActiveCell.row = args.row;\n";
-//		$HTML .= "    {$GridName}LocalStorage.ActiveCell.cell = args.cell;\n";
 		$HTML .= "});\n\n";
 		
 		return $HTML;
 		
+	}
+	
+	private function onActiveKeyLoaded() {
+	
+		$GridName = $this->Table->_gridName;
+	
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire active cell loaded from the data cache to the grid\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}Data.onActiveKeyLoaded.subscribe(function (e, args) { \n";
+		$HTML .= "    {$GridName}.setActiveCell(args.row,args.cell);\n";
+		$HTML .= "});\n\n";
+	
+		return $HTML;
+	
 	}
 	
 	private function onRowCountChanged() {
@@ -156,15 +164,14 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "{$GridName}.onSort.subscribe(function (e, args) {\n";
 		$HTML .= "  {$GridName}Data.setSort({$GridName}.getSortColumns());\n";
 		$HTML .= "  {$GridName}Data.invalidate();\n";
-//		$HTML .= "  console.log({$GridName}Data.getActiveRow());\n";
 		$HTML .= "  {$GridName}.invalidate();\n";
 		$HTML .= "  {$GridName}.render();\n";	
 		
-		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell()-1);\n";
-		//$HTML .= "  {$GridName}.resetActiveCell();\n";
+		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
 		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
+		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
 //		$HTML .= "  console.log(ActiveRow);\n";
-		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,0);\n";
+		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
 //		$HTML .= "  console.log({$GridName}Data.getActiveRow());\n";
 		$HTML .= "});\n\n";
 		

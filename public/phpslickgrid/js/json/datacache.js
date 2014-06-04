@@ -75,7 +75,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 250000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -94,7 +94,7 @@
 			blockSize : 100,  		// Number of rows (records) to try and get per JASON RPC call.
 			bufferMax : 300,		    // Maximum number of rows (records) to keep at any given time.
 			// TODO: for bufferMax, look in slickgird.js at resizeCanvas and make bufferMax 
-			// slightly bigger than 3*numVisibleRows.									
+			// slightly bigger than 3*numVisibleRows.  Make blockSize = numVisibleRows.									
 			
 			
 			/* Sorts and filters */
@@ -148,6 +148,7 @@
 		var onRowCountChanged = new Slick.Event();
 		var onRowsChanged = new Slick.Event();
 	//	var onSync = new Slick.Event();
+		var onActiveKeyLoaded = new Slick.Event();
 		var onRowTotalCountChanged = new Slick.Event();
 
 		
@@ -231,6 +232,11 @@
 					if (String(data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
 						self.state.newestRecord = data[i][self.state.upd_dtm_col];
 				
+				if (typeof data[i][self.state.primay_col] != 'undefined') 
+					if (String(data[i][self.state.primay_col]) == String(self.state.localStorage.activeRow.key))
+						onActiveKeyLoaded.notify({
+							row : (start+i), cell : self.state.localStorage.activeRow.cell
+						}, null, self);
 			}
 			
 			// clean up
@@ -297,7 +303,7 @@
 			self.buffer 		= new Array();
 			self.reverseLookup 	= new Array();
 			
-			console.log(self.state.localStorage.activeRow);
+			//console.log(self.state.localStorage.activeRow);
 			
 			self.service.setAsync(true);
 		}
@@ -333,7 +339,7 @@
 			else {
 				self.state.localStorage.activeRow.key=null;
 			}
-			console.log(self.state.localStorage.activeRow);
+			//console.log(self.state.localStorage.activeRow);
 			store.set(self.state.gridName , self.state.localStorage);
 		}
 		
@@ -415,7 +421,7 @@
 					delete(self.outOfScope["k"+row]);
 				}
 			}
-			
+
 			// Loop thorough buffered rows that fell out of scope.
 			var len = data['outOfScope'].length;
 			for (var i=0;i<len;i++) {
@@ -492,6 +498,7 @@
 			"getActiveRow" : getActiveRow,
 			"getActiveCell" : getActiveCell,
 			"getActiveKey" : getActiveKey,
+			"onActiveKeyLoaded" : onActiveKeyLoaded,
 			"invalidate" : invalidate,
 			"self" : self
 
