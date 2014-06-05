@@ -92,7 +92,7 @@
 				
 			/* Buffer status */
 			blockSize : 100,  		// Number of rows (records) to try and get per JASON RPC call.
-			bufferMax : 300,		    // Maximum number of rows (records) to keep at any given time.
+			bufferMax : 300,		// Maximum number of rows (records) to keep at any given time.
 			// TODO: for bufferMax, look in slickgird.js at resizeCanvas and make bufferMax 
 			// slightly bigger than 3*numVisibleRows.  Make blockSize = numVisibleRows.									
 			
@@ -116,7 +116,8 @@
 				row : 0,
 				cell : 0,
 				key : null
-			}
+			},
+			columnPos : {}
 		};
 			
 		// Prime the state default state + initial state from server.
@@ -355,6 +356,42 @@
 			return self.state.localStorage.activeRow.key;
 		}
 		
+		function saveColumns(columns) {
+		        
+			self.state.localStorage.columnPos = [];
+		    
+		    for (var i = 0; i < columns.length; i++) {
+		    	var obj = {
+		    			width: columns[i].width,
+		                id: columns[i].id
+		    	};
+		    	self.state.localStorage.columnPos.push(obj);
+		    }
+
+		    store.set(self.state.gridName , self.state.localStorage);
+		}
+		
+		function restoreColumns(columns) {
+			
+			var columnIdx = {};
+			for(var i = 0; i< columns.length; i++) {
+				columnIdx[columns[i].id]=i;
+			}
+			
+			var newColumns = [];
+			for(var i = 0; i<self.state.localStorage.columnPos.length; i++) {
+				columns[columnIdx[self.state.localStorage.columnPos[i].id]].width=self.state.localStorage.columnPos[i].width;
+				newColumns.push(columns[columnIdx[self.state.localStorage.columnPos[i].id]]);
+				delete columnIdx[self.state.localStorage.columnPos[i].id];
+			}
+			
+			for (var key in columnIdx) {
+				newColumns.push(columns[columnIdx[key]]);
+			}
+			
+			return newColumns;
+		}
+		
 		function updateItem(item) {
 			// Don't let the user move on until the row has been saved.  
 			self.service.setAsync(false);
@@ -500,6 +537,8 @@
 			"getActiveKey" : getActiveKey,
 			"onActiveKeyLoaded" : onActiveKeyLoaded,
 			"invalidate" : invalidate,
+			"saveColumns" : saveColumns,
+			"restoreColumns" : restoreColumns,
 			"self" : self
 
 		};

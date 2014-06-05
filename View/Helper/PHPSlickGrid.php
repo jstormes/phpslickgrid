@@ -54,6 +54,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
  		// Render the grid data connection to the browser:
  		$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}State);\n\n";
+ 		
+ 		$HTML .= $this->RestoreColumns();
 		
  		// Render the grid to the browser:
  		$HTML .= "var {$GridName} = new Slick.Grid('#{$GridName}', {$GridName}Data, {$GridName}Columns, {$GridName}State);\n\n";
@@ -91,6 +93,46 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
 		$HTML .=  $this->onActiveKeyLoaded();
 		
+		$HTML .= $this->onColumnsReordered();
+		$HTML .= $this->onColumnsResized();
+		
+		return $HTML;
+	}
+	
+	private function RestoreColumns() {
+		
+		$GridName = $this->Table->_gridName;
+		
+		$HTML = "{$GridName}Columns={$GridName}Data.restoreColumns({$GridName}Columns);\n";
+		
+		return $HTML;
+	}
+	
+	private function onColumnsReordered() {
+		
+		$GridName = $this->Table->_gridName;
+		
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire grid column reorder to data cache.\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}.onColumnsReordered.subscribe(function (e, args) { \n";
+		$HTML .= "    {$GridName}Data.saveColumns({$GridName}.getColumns());\n";
+		$HTML .= "});\n\n";
+		
+		return $HTML;
+	}
+	
+	private function onColumnsResized() {
+	
+		$GridName = $this->Table->_gridName;
+	
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire grid column reorder to data cache.\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}.onColumnsResized.subscribe(function (e, args) { \n";
+		$HTML .= "    {$GridName}Data.saveColumns({$GridName}.getColumns());\n";
+		$HTML .= "});\n\n";
+	
 		return $HTML;
 	}
 	
