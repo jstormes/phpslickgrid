@@ -29,10 +29,16 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	 * @param array $Options
 	 * @return string
 	 */
-	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table,array $Options=array()) {
+	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table,$Class=null,$Style=null) {
 		
 		$this->Table = $Table;
-		$this->Options = $Options;
+		//$this->Options = $Options;
+		
+		if ($Class)
+			$Class="class='{$Class}'";
+		
+		if ($Style)
+			$Style="style='{$Style}'";
 		
 		$GridName = $this->Table->_gridName;
 		
@@ -41,7 +47,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 			$Table->_gridState['jsonrpc']=$this->view->url(array("action"=>"json"));
 		
 		// Build the HTML div for the view helper
-		$HTML = "<div id='{$GridName}' style='height:100%;'></div>\n\n";
+		$HTML = "<div id='{$GridName}' {$Class} {$Style}></div>\n\n";
 		
 		// Build the script for the view helper
 		$HTML .= "<script>\n";

@@ -86,6 +86,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	protected $_deleted_col = null;
 	
+	protected $Hidden = array();
+	
 	
 	
 	/* Used for local caching, to maintain constant view of data. */
@@ -283,9 +285,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$column="";
 		foreach($this->_gridColumns as $Column) {
 			//$db_column=$this->DerefrenceTable($Column->field);
-			// Don't even send hard hidden columns to browser.
-			//if (!in_array($db_column, $this->HardHidden)) {
-				if (!isset($Column->hidden)) {
+			// Don't setup hidden columns.
+			if (!in_array($Column['id'], $this->Hidden)) {
+				if (!$Column['hidden']) {
 					$line="";
 					foreach($Column as $Key=>$setting) {
 						if (in_array($Key,$dont_quote))
@@ -299,7 +301,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 					$line="\t{".rtrim($line,', ')."},\n";
 					$column.=$line;
 				}
-			//}
+			}
 		}
 		$column=rtrim($column,",\n");
 	
@@ -338,6 +340,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 			// Default to sortable
 			$newColumn['sortable']=true;
+			
+			// Default to not hidden
+			$newColumn['hidden']=false;
 		
 			// Default width to 100 px.
 			$newColumn['width']=100;

@@ -304,8 +304,6 @@
 			self.buffer 		= new Array();
 			self.reverseLookup 	= new Array();
 			
-			//console.log(self.state.localStorage.activeRow);
-			
 			self.service.setAsync(true);
 		}
 		
@@ -380,9 +378,11 @@
 			
 			var newColumns = [];
 			for(var i = 0; i<self.state.localStorage.columnPos.length; i++) {
-				columns[columnIdx[self.state.localStorage.columnPos[i].id]].width=self.state.localStorage.columnPos[i].width;
-				newColumns.push(columns[columnIdx[self.state.localStorage.columnPos[i].id]]);
-				delete columnIdx[self.state.localStorage.columnPos[i].id];
+				if (columns[columnIdx[self.state.localStorage.columnPos[i].id]]!=undefined) {
+					columns[columnIdx[self.state.localStorage.columnPos[i].id]].width=self.state.localStorage.columnPos[i].width;
+					newColumns.push(columns[columnIdx[self.state.localStorage.columnPos[i].id]]);
+					delete columnIdx[self.state.localStorage.columnPos[i].id];
+				}
 			}
 			
 			for (var key in columnIdx) {
