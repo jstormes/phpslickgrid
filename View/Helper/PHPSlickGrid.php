@@ -50,30 +50,42 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML = "<div id='{$GridName}' {$Class} {$Style}></div>\n\n";
 		
 		// Build the script for the view helper
-		$HTML .= "<script>\n";
+		$HTML .= "<script>\n\n";
 		
 		// Render the column configuration to the browser:
+		$HTML .= "// *******************************************************\n";
+		$HTML .= "// Configure the columns for the grid.\n";
+		$HTML .= "// *******************************************************\n";
 		$HTML .= "var {$GridName}Columns = ".$Table->ColumnsToJavaScript().";\n\n";
 				
 		// Render the grid configuration to the browser:
+		$HTML .= "// *******************************************************\n";
+		$HTML .= "// Configure the initial state for the grid.\n";
+		$HTML .= "// *******************************************************\n";
 		$HTML .= "var {$GridName}State = ".$Table->StateToJSON().";\n\n";
 		
  		// Render the grid data connection to the browser:
+		$HTML .= "// *******************************************************\n";
+		$HTML .= "// Instantiate the data cache.\n";
+		$HTML .= "// *******************************************************\n";
  		$HTML .= "var {$GridName}Data =  new PHPSlickGrid.JSON.DataCache({$GridName}State);\n\n";
  		
  		$HTML .= $this->RestoreColumns();
 		
  		// Render the grid to the browser:
+ 		$HTML .= "// *******************************************************\n";
+ 		$HTML .= "// Instantiate the grid.\n";
+ 		$HTML .= "// *******************************************************\n";
  		$HTML .= "var {$GridName} = new Slick.Grid('#{$GridName}', {$GridName}Data, {$GridName}Columns, {$GridName}State);\n\n";
 		
  		// Set sort from state
- 		$HTML .= "{$GridName}.setSortColumns({$GridName}Data.getSort());\n";
+ 		$HTML .= "// *******************************************************\n";
+ 		$HTML .= "// Restore any sorts.\n";
+ 		$HTML .= "// *******************************************************\n";
+ 		$HTML .= "{$GridName}.setSortColumns({$GridName}Data.getSort());\n\n";
 			
  		// Render any needed Dynamic Java Script:
  		$HTML .= $this->DynamicJS();
-		
-		
-// 		//$HTML .= "    {$GridName}.render();\n";
 		
 		$HTML .= "</script>\n";
 		return $HTML;
@@ -109,7 +121,10 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
 		$GridName = $this->Table->_gridName;
 		
-		$HTML = "{$GridName}Columns={$GridName}Data.restoreColumns({$GridName}Columns);\n";
+		$HTML  = "// *******************************************************\n";
+		$HTML .= "// Restore the column size and position.\n";
+		$HTML .= "// *******************************************************\n";
+		$HTML .= "{$GridName}Columns={$GridName}Data.restoreColumns({$GridName}Columns);\n\n";
 		
 		return $HTML;
 	}
@@ -218,9 +233,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
 		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
 		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
-//		$HTML .= "  console.log(ActiveRow);\n";
 		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
-//		$HTML .= "  console.log({$GridName}Data.getActiveRow());\n";
 		$HTML .= "});\n\n";
 		
 		return $HTML;
