@@ -20,17 +20,22 @@
 		
 		function handleHeaderCellRendered(e, args) {
 			
+			var column = args.column;
+			var grid = args.grid;
+			var node = args.node;
+			
 			// find the space for our header menu icons
 			var $el=$("#"+args.node.id).find(".headermenusg");
 			if ($el.length==0) 
 				// Create a space in the header cell for our menu if we don't have one
 				$el = $("<div></div>").addClass("headermenusg").appendTo(args.node);
-
-
 			
-			$el.append($("<div>"+options.icon+"</div>").addClass("headericon"));
+			// insert icon into header
+			var $icon = $("<div>"+options.icon+"</div>").addClass("headericon");
+			$el.append($icon);
 			
-			
+			// bind click event of the icon to showDialog()
+			$icon.bind("click", showDialog);
 			
 			
 			
@@ -69,9 +74,15 @@
 			grid.setColumns(grid.getColumns());
 		}
 		
-		function showDialog() {
+		function showDialog(e) {
 			// Foreach grid dialog in column dialog array
 			// Add dialog to div
+			alert("Show dialog");
+			
+			// Stop propagation so that it doesn't register as a header click
+			// event.
+			e.preventDefault();
+			e.stopPropagation();
 		}
 		
 		function hideDialog() {
