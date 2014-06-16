@@ -36,28 +36,7 @@
 			
 			// bind click event of the icon to showDialog()
 			$icon.bind("click", showDialog);
-			
-			
-			
-			
-			
-//			
-			
-			//
-			
-//			var hdr_id = args.node.id;
-//			var $hdr = $('.'+args.node.id);
-			
-//			if($("." + args.node.id).find(".headermenusg").length == 0) {
-//				console.log("Found");
-//			}
-//			console.log($hdr.find(".asdf"));
-//			if ($hdr.find(".headermenusg"))
-//				console.log("Found");
-//			var $el = $("<div><i style='font-family:FontAwesome;' class='fa fa-caret-down'></i></div>");//.addClass(
-//			"phpslick-headerdialog-menubutton").data("column", column);
-			
-			
+				
 		}
 		
 		function handleBeforeHeaderCellDestroy(e, args) {

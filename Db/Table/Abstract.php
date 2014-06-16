@@ -177,7 +177,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridState['enableAddRow']         = true;
 		$this->_gridState['enableCellNavigation'] = true;
 		$this->_gridState['enableEditorLoading']  = false;
-		$this->_gridState['autoEdit']             = true;
+		$this->_gridState['autoEdit']             = false;
 		$this->_gridState['enableColumnReorder']  = true;
 		$this->_gridState['forceFitColumns']      = false;
 		$this->_gridState['rowHeight']            = 22;
