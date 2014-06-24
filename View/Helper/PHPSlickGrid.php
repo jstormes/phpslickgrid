@@ -97,7 +97,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML ="";
 		/********************************************************
 		 * Data Events
-		 ********************************************************/
+		 *******************************************************/
 		$HTML .= $this->onRowCountChanged();
 		$HTML .= $this->onRowChanged();
 		
@@ -109,13 +109,23 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= $this->onAddNewRow();
 		$HTML .= $this->onActiveCellChanged();
 		
-		$HTML .=  $this->onActiveKeyLoaded();
+		$HTML .= $this->onActiveKeyLoaded();
 		
 		$HTML .= $this->onColumnsReordered();
 		$HTML .= $this->onColumnsResized();
 		
+		/********************************************************
+		 * Plugins 
+		 *******************************************************/
+		$HTML .= $this->renderPlgins();
+		
 		return $HTML;
 	}
+	
+	private function renderPlgins() {
+		
+	}
+	
 	
 	private function RestoreColumns() {
 		

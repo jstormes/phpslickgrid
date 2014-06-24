@@ -88,6 +88,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	protected $Hidden = array();
 	
+	/**
+	 * Plugins
+	 * 
+	 * @var unknown
+	 */
+	protected $Plugins = array();
+	
 	
 	
 	/* Used for local caching, to maintain constant view of data. */
@@ -763,6 +770,15 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			throw new Exception(print_r($ex,true), 32001);
 		}
 	
+	}
+	
+	/**
+	 * Add Plugin Logic to grid
+	 * 
+	 * @param PHPSlickGrid_Plugins_Abstract $Plugin
+	 */
+	public function AddPlugin(PHPSlickGrid_Plugins_Abstract $Plugin) {
+		array_push($this->Plugins, $Plugin);
 	}
 	
 }

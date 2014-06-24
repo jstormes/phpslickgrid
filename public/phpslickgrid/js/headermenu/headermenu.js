@@ -7,16 +7,37 @@
 	});
 	
 	function HeaderMenu(grid, data, options) {
+		
+		var MenuItem = [];
 	
 		var _handler = new Slick.EventHandler(); // Internal event handler
 		
 		var HeaderCellRender 		= new Slick.Event();
 		var BeforeHeaderCellDestroy = new Slick.Event();
 		
-		_handler.subscribe(grid.onHeaderCellRendered,handleHeaderCellRendered)
-				.subscribe(grid.onBeforeHeaderCellDestroy,handleBeforeHeaderCellDestroy);
+		//_handler.subscribe(grid.onHeaderCellRendered,handleHeaderCellRendered)
+		//.subscribe(grid.onBeforeHeaderCellDestroy,handleBeforeHeaderCellDestroy);
 		
-		grid.setColumns(grid.getColumns());
+		//grid.setColumns(grid.getColumns());
+		
+		function init(grid) {
+	      options = $.extend(true, {}, _defaults, options);
+	      _grid = grid;
+	      _handler
+	        .subscribe(_grid.onHeaderCellRendered, handleHeaderCellRendered)
+	        .subscribe(_grid.onBeforeHeaderCellDestroy, handleBeforeHeaderCellDestroy);
+
+	      // Force the grid to re-render the header now that the events are hooked up.
+	      _grid.setColumns(_grid.getColumns());
+
+	      // Hide the menu on outside click.
+	      //$(document.body).bind("mousedown", handleBodyMouseDown);
+		}
+		
+		function registerMenuItem(item) {
+			MenuItem.unshift(item);
+			MenuItem.init(self);
+		}
 		
 		function handleHeaderCellRendered(e, args) {
 			
