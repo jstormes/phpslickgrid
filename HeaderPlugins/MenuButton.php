@@ -17,7 +17,7 @@ class PHPSlickGrid_HeaderPlugins_MenuButton  extends PHPSlickGrid_HeaderPlugins_
 	 * 
 	 * @param PHPSlickGrid_HeaderMenu_Plugins_HTML $Plugin
 	 */
- 	public function AddPlugin(PHPSlickGrid_Plugins_HeaderMenu_Abstract $Plugin){
+ 	public function AddPlugin(PHPSlickGrid_HeaderPlugins_MenuItems_Abstract $Plugin){
  		array_push($this->Plugins, $Plugin);
  	}
  	

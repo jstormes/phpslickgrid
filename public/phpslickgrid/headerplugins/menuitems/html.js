@@ -2,21 +2,33 @@
 	// register namespace
 	$.extend(true, window, {
 		"PHPSlickGrid" : {
-			"HeaderMenu" : {
-				"HTML": HTML
+			"HeaderPlugins" : {
+				"MenuItems" : {
+					"HTML": HTML
+				}
+				
 			}
 		}
 	});
 	
+	
+	
 	function HTML(data, options) {
 		
-		function init(grid) {
-			
+		var html=null;
+		
+		function init(parent) {
+			console.log("PHPSlickGrid.HeaderPlugin.MenuItems.HTML.init() = "+html);
 		}
 		
+		function setHTML(shtml) {
+			html = shtml;
+		}
+ 		
 		
 		$.extend(this, {
-			"init" : init
+			"init" : init,
+			"setHTML" : setHTML
 			//"destroy" : destroy,
 			//"hideDialog" :hideDialog,
 			//"getGrid": getGrid,
