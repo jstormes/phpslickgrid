@@ -2,13 +2,17 @@
 	// register namespace
 	$.extend(true, window, {
 		"PHPSlickGrid" : {
-			"HeaderMenu" : HeaderMenu
+			"HeaderPlugins" : {
+				"MenuButton" : MenuButton
+			}
 		}
 	});
 	
-	function HeaderMenu(grid, data, options) {
+	function MenuButton(grid, data, options) {
 		
-		var MenuItem = [];
+		
+		
+		var MenuItems = [];
 	
 		var _handler = new Slick.EventHandler(); // Internal event handler
 		
@@ -21,6 +25,7 @@
 		//grid.setColumns(grid.getColumns());
 		
 		function init(grid) {
+		  var _defaults = {};
 	      options = $.extend(true, {}, _defaults, options);
 	      _grid = grid;
 	      _handler
@@ -30,16 +35,33 @@
 	      // Force the grid to re-render the header now that the events are hooked up.
 	      _grid.setColumns(_grid.getColumns());
 
+	      //console.log("Hello World I am HeaderMenu");
+	      
 	      // Hide the menu on outside click.
 	      //$(document.body).bind("mousedown", handleBodyMouseDown);
 		}
 		
-		function registerMenuItem(item) {
-			MenuItem.unshift(item);
-			MenuItem.init(self);
+		function registerPlugin(item) {
+			MenuItems.unshift(item);
+			MenuItems.init(self);
 		}
 		
 		function handleHeaderCellRendered(e, args) {
+			
+			console.log(options['columns']);
+			
+			var AddToColumn=true;
+			
+			// options['columns']!=null;
+				// if !in options['columns'] {
+					// AddToColumn=false;
+			
+			// foreach MenuItem
+				// if MenuItem.ApplitesTo(args) {
+					// AddToColumn=true;
+			    // else
+			        // AddToColumn=false;
+			
 			
 			var column = args.column;
 			var grid = args.grid;
@@ -91,15 +113,15 @@
 			
 		}
 		
-		console.log("Hello World I am HeaderMenu");
+		
 
 	
 	
 		$.extend(this, {
-			//"init" : init,
+			"init" : init,
 			//"destroy" : destroy,
 			//"hideDialog" :hideDialog,
-			//"registerPlugin": registerPlugin, 
+			"registerPlugin": registerPlugin
 			//"getGrid": getGrid,
 
 			//"onBeforeMenuShow" : new Slick.Event()

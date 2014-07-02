@@ -31,6 +31,12 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	 */
 	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table,$Class=null,$Style=null) {
 		
+		// Grab a refrence to the logger.
+		$this->log              = Zend_Registry::get('log');
+		// Firebug Console Log example
+		//$this->log->debug("this is a debug msg");
+		
+		
 		$this->Table = $Table;
 		//$this->Options = $Options;
 		
@@ -117,13 +123,23 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		/********************************************************
 		 * Plugins 
 		 *******************************************************/
-		$HTML .= $this->renderPlgins();
+		$HTML .= $this->renderPlugins();
 		
 		return $HTML;
 	}
 	
-	private function renderPlgins() {
+	private function renderPlugins() {
 		
+		$HTML  = "// *******************************************************\n";
+		$HTML .= "// Rendering Plugins.\n";
+		$HTML .= "// *******************************************************\n";
+
+		$plugin_id = 1;
+		foreach($this->Table->Plugins as $plugin) {
+			$HTML .= $plugin->render($plugin_id++, $this->Table);	
+		}
+		
+		return $HTML;
 	}
 	
 	
@@ -158,7 +174,7 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$GridName = $this->Table->_gridName;
 	
 		$HTML  = "// ****************************************************************\n";
-		$HTML .= "// Wire grid column reorder to data cache.\n";
+		$HTML .= "// Wire grid column resize to data cache.\n";
 		$HTML .= "// ****************************************************************\n";
 		$HTML .= "{$GridName}.onColumnsResized.subscribe(function (e, args) { \n";
 		$HTML .= "    {$GridName}Data.saveColumns({$GridName}.getColumns());\n";

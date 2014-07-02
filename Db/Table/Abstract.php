@@ -91,9 +91,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	/**
 	 * Plugins
 	 * 
-	 * @var unknown
+	 * @var PHPSlickGrid_Plugins_Abstract
 	 */
-	protected $Plugins = array();
+	public $Plugins = array();
 	
 	
 	
@@ -777,7 +777,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * 
 	 * @param PHPSlickGrid_Plugins_Abstract $Plugin
 	 */
-	public function AddPlugin(PHPSlickGrid_Plugins_Abstract $Plugin) {
+	public function AddPlugin(PHPSlickGrid_HeaderPlugins_Abstract $Plugin) {
 		array_push($this->Plugins, $Plugin);
 	}
 	

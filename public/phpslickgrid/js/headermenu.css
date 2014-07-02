@@ -1,0 +1,105 @@
+@CHARSET "UTF-8";
+
+.phpslick-headerdialog-menubutton {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background-repeat: no-repeat;
+  background-position: left center;
+  cursor: pointer;
+
+  display: none;
+  border-left: thin ridge silver;
+
+/*  background-image:url('/phpslick/images/down.gif'); */
+}
+
+.headermenusg {
+	display: none;
+  position: absolute;
+	right: 4px;
+
+  top: 0;
+  bottom: 0;
+  
+}
+
+.slick-header-column:hover > .headermenusg,
+.slick-header-column-active .headermenusg {
+  display: inline-block;
+}
+
+.headericon {
+	position: static;
+	float: right;
+  background-repeat: no-repeat;
+  background-position: left center;
+  cursor: pointer;
+
+	padding: 4px;
+  height: 100%;
+  border-left: thin ridge silver;
+}
+
+.headertest {
+	position: static;
+	float: right;
+}
+.headermenusg2 {
+  position: absolute;
+	right: 18px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+}
+
+/* Move the button over 14 pixles so we can have two buttons.
+FilterDialog2 = new PHPSlick.Plugins.HeaderDialog({buttonCssClass:'phpslick-powerfilter-menubutton2',buttonImage:'../images/columnadmin.png'}); */
+.phpslick-headerdialog-menubutton2 {
+  right: 14px;
+
+  background-image:url('/phpslick/images/admin.gif');
+}
+
+/* Move the button over 28 pixles so we can have two buttons
+ FilterDialog2 = new PHPSlick.Plugins.HeaderDialog({buttonCssClass:'phpslick-powerfilter-menubutton3',buttonImage:'../images/columnadmin.png'});*/
+.phpslick-headerdialog-menubutton3 {
+  right: 28px;
+}
+
+.phpslick-headerdialog-pluginsection {
+	margin: 10px;
+}
+
+
+.slick-header-column:hover > .phpslick-headerdialog-menubutton,
+.slick-header-column-active .phpslick-headerdialog-menubutton {
+  display: inline-block;
+}
+
+
+/* Menu */
+.phpslick-headerdialog-menu {
+	position: absolute;
+	display: inline-block;
+	margin: 0;
+	padding: 2px;
+	cursor: default;
+	border: 1px solid #718BB7;
+	background: #f0f0f0;
+	padding: 2px;
+	-moz-box-shadow: 2px 2px 2px silver;
+	-webkit-box-shadow: 2px 2px 2px silver;
+	min-width: 100px;
+	z-index: 30000;
+	margin:0;
+	padding:0;
+	border-radius: 8px;
+	overflow:hidden;
+}
+
+.no-scroll {
+	overflow: hidden;
+}

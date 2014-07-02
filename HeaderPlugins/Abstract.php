@@ -1,6 +1,6 @@
 <?php
 
-class PHPSlickGrid_Plugins_Abstract
+class PHPSlickGrid_HeaderPlugins_Abstract
 {
 	/**
 	 * Render the HTML, if any, for the plug in
