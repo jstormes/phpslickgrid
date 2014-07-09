@@ -1,21 +1,5 @@
 @CHARSET "UTF-8";
 
-.phpslick-headerdialog-menubutton {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 14px;
-  background-repeat: no-repeat;
-  background-position: left center;
-  cursor: pointer;
-
-  display: none;
-  border-left: thin ridge silver;
-
-/*  background-image:url('/phpslick/images/down.gif'); */
-}
-
 /* Container for the icons in the header cell */
 .headerbuttons {
 	display: none;
@@ -25,11 +9,13 @@
 	bottom: 0;
 }
 
+/* Hover action over menu buttons */
 .slick-header-column:hover > .headerbuttons,
 .slick-header-column-active .headerbuttons {
   display: inline-block;
 }
 
+/* Button icon style */
 .buttonicon {
 	position: static;
 	float: right;
@@ -42,44 +28,8 @@
 	border-left: thin ridge silver;
 }
 
-.headertest {
-	position: static;
-	float: right;
-}
-.headermenusg2 {
-  position: absolute;
-	right: 18px;
-  top: 0;
-  bottom: 0;
-  width: 14px;
-}
 
-/* Move the button over 14 pixles so we can have two buttons.
-FilterDialog2 = new PHPSlick.Plugins.HeaderDialog({buttonCssClass:'phpslick-powerfilter-menubutton2',buttonImage:'../images/columnadmin.png'}); */
-.phpslick-headerdialog-menubutton2 {
-  right: 14px;
-
-  background-image:url('/phpslick/images/admin.gif');
-}
-
-/* Move the button over 28 pixles so we can have two buttons
- FilterDialog2 = new PHPSlick.Plugins.HeaderDialog({buttonCssClass:'phpslick-powerfilter-menubutton3',buttonImage:'../images/columnadmin.png'});*/
-.phpslick-headerdialog-menubutton3 {
-  right: 28px;
-}
-
-.phpslick-headerdialog-pluginsection {
-	margin: 10px;
-}
-
-
-.slick-header-column:hover > .phpslick-headerdialog-menubutton,
-.slick-header-column-active .phpslick-headerdialog-menubutton {
-  display: inline-block;
-}
-
-
-/* Menu */
+/* Header Menu Style */
 .phpslick-headerdialog-menu {
 	position: absolute;
 	display: inline-block;
