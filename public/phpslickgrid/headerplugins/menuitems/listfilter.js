@@ -4,7 +4,7 @@
 		"PHPSlickGrid" : {
 			"HeaderPlugins" : {
 				"MenuItems" : {
-					"HTML": HTML
+					"ListFilter": ListFilter
 				}
 				
 			}
@@ -13,34 +13,25 @@
 	
 	
 	
-	function HTML(data, options) {
+	function ListFilter(data, options) {
 		
-		var html=null;
 		
 		function init(parent) {
-			console.log("PHPSlickGrid.HeaderPlugin.MenuItems.HTML.init() = "+html);
+			
 		}
 		
 		function destroy(parent) {
 			
 		}
 		
-		function appliesToColumn(args) {
-
-			// hide from column for testing.
-			//if (args.column.name=="A")
-			//	return false;
-			
+		function appliesToColumn(args) {			
 			return true;
 		}
 		
 		function showDialog($dialog) {
-			$item_div=$("<div>"+html+"</div>").appendTo($dialog);
+			$item_div=$("<div>ListFilter</div>").appendTo($dialog);
 		}
 		
-		function setHTML(shtml) {
-			html = shtml;
-		}
  		
 		function hideDialog() {
 			
@@ -49,7 +40,6 @@
 		$.extend(this, {
 			"init" : init,
 			"showDialog" : showDialog,
-			"setHTML" : setHTML,
 			"destroy" : destroy,
 			"hideDialog" :hideDialog,
 			"appliesToColumn" : appliesToColumn

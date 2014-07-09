@@ -37,6 +37,12 @@
 		}
 		
 		function destroy() {
+
+			// For each plug-in call it's destroy method
+			for (var i = 0; i < MenuItems.length; i++) {
+				MenuItems[i].destroy($dialog);
+			}
+			
 			// un-hook event handler
 			_handler.unsubscribeAll();
 			// un-hook mouse down outside of filter menu from menu logic
@@ -53,7 +59,7 @@
 		}	
 		
 		function registerPlugin(item) {
-			MenuItems.unshift(item);
+			MenuItems.push(item);
 			item.init(self);
 		}
 		
@@ -63,26 +69,32 @@
 		 */
 		function handleHeaderCellRendered(e, args) {
 			
+			var column = args.column;
+			var grid = args.grid;
+			var node = args.node;
+			
 			//console.log(options['columns']);
 			
 			var AddToColumn=true;
 			
+			
 			// options['columns']!=null;
 				// if !in options['columns'] {
 					// AddToColumn=false;
+
+			// If no items apply, don't put button in header
+			var MenuItemCnt = 0;
+			for (var i = 0; i < MenuItems.length; i++) {
+				if (MenuItems[i].appliesToColumn(args))
+					MenuItemCnt++;
+			}
 			
-			// foreach MenuItem
-				// if MenuItem.ApplitesTo(args) {
-					// AddToColumn=true;
-			    // else
-			        // AddToColumn=false;
+			if (MenuItemCnt == 0)
+				AddToColumn=false;
 			
-			// If the column is eligable for the button add it.
+			// If the column is eligible for the button add it.
 			if (AddToColumn) {
-				var column = args.column;
-				var grid = args.grid;
-				var node = args.node;
-				
+								
 				// Make sure we have a container for our buttons
 				var $el=$("#"+args.node.id).find(".headerbuttons");
 				if ($el.length==0)
@@ -121,7 +133,7 @@
 			var $dialogButton = $(this);
 			var activeColumn = $dialogButton.data("column");
 			
-			console.log(activeColumn);
+			//console.log(activeColumn);
 			
 			// Mark the header as active to keep the highlighting.
 			$activeHeaderColumn = $dialogButton.closest(".slick-header-column");
@@ -157,9 +169,10 @@
 				});
 			
 			
-			// Foreach grid dialog in column dialog array
-			// Add dialog to div
-			//alert("Show dialog");
+			// For each plug-in call it's render method
+			for (var i = 0; i < MenuItems.length; i++) {
+				MenuItems[i].showDialog($dialog);
+			}
 			
 			// Stop propagation so that it doesn't register as a header click
 			// event.
@@ -174,11 +187,10 @@
 				$activeHeaderColumn.removeClass("slick-header-column-active");
 			}
 			
-			// hide all plugins
-			//for(var i = 0; i < plugins.length; i++){
-			//	if (typeof plugins[i].hide != 'undefined')
-			//		plugins[i].hide(activeColumn,$activeHeaderColumn);
-			//}
+			// For each plug-in call it's hideDialog method
+			for (var i = 0; i < MenuItems.length; i++) {
+				MenuItems[i].hideDialog($dialog);
+			}
 			
 			//_grid.setColumns(_grid.getColumns());
 			
