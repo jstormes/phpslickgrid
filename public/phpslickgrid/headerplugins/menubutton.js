@@ -19,12 +19,7 @@
 		var HeaderCellRender 		= new Slick.Event();
 		var BeforeHeaderCellDestroy = new Slick.Event();
 		
-		var $dialog; // div of the dialog box.
-		
-		//_handler.subscribe(grid.onHeaderCellRendered,handleHeaderCellRendered)
-		//.subscribe(grid.onBeforeHeaderCellDestroy,handleBeforeHeaderCellDestroy);
-		
-		//grid.setColumns(grid.getColumns());
+		var $dialog=null; // div of the dialog box.
 		
 		function init(grid) {
 		  var _defaults = {};
@@ -38,7 +33,7 @@
 	      _grid.setColumns(_grid.getColumns());
 	      
 	      // Hide the menu on outside click.
-	      //$(document.body).bind("mousedown", handleBodyMouseDown);
+	      $(document.body).bind("mousedown", handleBodyMouseDown);
 		}
 		
 		function destroy() {
@@ -48,11 +43,24 @@
 			$(document.body).unbind("mousedown", handleBodyMouseDown);
 		}
 		
+		function handleBodyMouseDown(e) {
+			// the the mouse click in not in our filter menu
+			// hide the menu.
+			if ($dialog && $dialog[0] != e.target
+					&& !$.contains($dialog[0], e.target)) {
+				hideDialog();
+			}
+		}	
+		
 		function registerPlugin(item) {
 			MenuItems.unshift(item);
 			item.init(self);
 		}
 		
+		/**
+		 * When grid.setColumn() this function is called for each
+		 * header cell.
+		 */
 		function handleHeaderCellRendered(e, args) {
 			
 			//console.log(options['columns']);
@@ -69,21 +77,20 @@
 			    // else
 			        // AddToColumn=false;
 			
+			// If the column is eligable for the button add it.
 			if (AddToColumn) {
 				var column = args.column;
 				var grid = args.grid;
 				var node = args.node;
 				
-				
-				
-				// find the space for our header menu icons
-				var $el=$("#"+args.node.id).find(".headermenusg");
+				// Make sure we have a container for our buttons
+				var $el=$("#"+args.node.id).find(".headerbuttons");
 				if ($el.length==0)
-					// Create a space in the header cell for our menu if we don't have one
-					$el = $("<div></div>").addClass("headermenusg").appendTo(args.node);
+					// Create a container in the header cell for our buttons if we don't have one
+					$el = $("<div></div>").addClass("headerbuttons").appendTo(args.node);
 					
-				// insert icon into header
-				var $icon = $("<div>"+options.icon+"</div>").addClass("headericon").data("column", column);
+				// insert button icon into header
+				var $icon = $("<div>"+options.icon+"</div>").addClass("buttonicon").data("column", column);
 				$el.append($icon);
 				
 				
@@ -183,7 +190,7 @@
 	
 		$.extend(this, {
 			"init" : init,
-			//"destroy" : destroy,
+			"destroy" : destroy,
 			//"hideDialog" :hideDialog,
 			"registerPlugin": registerPlugin
 			//"getGrid": getGrid,

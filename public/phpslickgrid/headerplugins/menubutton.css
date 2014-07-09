@@ -16,31 +16,30 @@
 /*  background-image:url('/phpslick/images/down.gif'); */
 }
 
-.headermenusg {
+/* Container for the icons in the header cell */
+.headerbuttons {
 	display: none;
-  position: absolute;
+	position: absolute;
 	right: 4px;
-
-  top: 0;
-  bottom: 0;
-  
+	top: 0;
+	bottom: 0;
 }
 
-.slick-header-column:hover > .headermenusg,
-.slick-header-column-active .headermenusg {
+.slick-header-column:hover > .headerbuttons,
+.slick-header-column-active .headerbuttons {
   display: inline-block;
 }
 
-.headericon {
+.buttonicon {
 	position: static;
 	float: right;
-  background-repeat: no-repeat;
-  background-position: left center;
-  cursor: pointer;
+	background-repeat: no-repeat;
+	background-position: left center;
+	cursor: pointer;
 
 	padding: 4px;
-  height: 100%;
-  border-left: thin ridge silver;
+	height: 100%;
+	border-left: thin ridge silver;
 }
 
 .headertest {
