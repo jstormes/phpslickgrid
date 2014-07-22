@@ -64,7 +64,7 @@
 	function DataCache(inital_state) {
 		
 		var self = this;
-				
+		
 		var default_state = {
 				
 			gridName : 'grid', 		// Grid name used to decode column names.  Column names are (gridName)$(columnName)
@@ -75,7 +75,7 @@
 			jsonrpc : null,     	// JSON RPC URL
 				
 			/* Pooling frequency used to keep in sync with other users */
-			pollFrequency : 1000,	// 2500 = 2.5 seconds, 1000 = 1 second
+			pollFrequency : false,	// 2500 = 2.5 seconds, 1000 = 1 second, false = no polling
 				
 			/* Key Columns */
 			primay_col : null,  	// Column name of the primary key. used used for hashing array for quick lookup.
@@ -122,6 +122,8 @@
 			
 		// Prime the state default state + initial state from server.
 		self.state = $.extend(true, {}, default_state, inital_state);
+		
+		
 		
 		// Merge the any saved local storage with the default (Saved trumps default)
 		var localStorage = store.get(self.state.gridName);
@@ -475,6 +477,7 @@
 			}			
 		}
 		
+		
 		// If we have a pollFrequency should we poll the server.
 		if (self.state.pollFrequency) {
 		
@@ -500,7 +503,7 @@
 			
 			// Kick off the Syncing
 			//SyncRequest();
-			setTimeout(SyncRequest, self.state.pollFrequency);
+			setTimeout(SyncRequest, parseInt(self.state.pollFrequency));
 		}
 		
 		function getItemMetadata(row) {

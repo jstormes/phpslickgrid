@@ -10,7 +10,7 @@
 	
 	function MenuButton(grid, data, options) {
 		
-		
+		var _self = this; // a quick handle to this for nested functions
 		
 		var MenuItems = [];
 	
@@ -171,7 +171,7 @@
 			
 			// For each plug-in call it's render method
 			for (var i = 0; i < MenuItems.length; i++) {
-				MenuItems[i].showDialog($dialog);
+				MenuItems[i].showDialog($dialog,activeColumn,$activeHeaderColumn,_self);
 			}
 			
 			// Stop propagation so that it doesn't register as a header click

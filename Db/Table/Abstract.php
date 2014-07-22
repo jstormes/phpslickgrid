@@ -171,6 +171,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	public function initState() {
 			
+		
 		/* Set initial state */
 		$this->_gridState['gridLength']       = $this->getLength();      // filtered row count
 		$this->_gridState['sortedLength']     = $this->getLength();      // filtered row count
@@ -184,7 +185,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridState['enableAddRow']         = true;
 		$this->_gridState['enableCellNavigation'] = true;
 		$this->_gridState['enableEditorLoading']  = false;
-		$this->_gridState['autoEdit']             = false;
+		$this->_gridState['autoEdit']             = true;
 		$this->_gridState['enableColumnReorder']  = true;
 		$this->_gridState['forceFitColumns']      = false;
 		$this->_gridState['rowHeight']            = 22;
@@ -198,6 +199,64 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	protected function _initState() {
 		
 	}
+	
+	/*
+	 * // Build core select
+				$select = $this->buildSelect($state);
+				$select = $this->addConditionsToSelect($select);
+	
+				// set limits
+				$select->where($this->_primary_col."<= ?", $state['sortedMaxPrimary']);
+				$select->limit($length,$start);
+	 */
+	
+	/************************************************/
+	/******** begin support for list filter *********/
+	/************************************************/
+	public function getDistinctLength($column, $options) {
+		
+		$Results = 0;
+		
+		$sel=$this->select();
+		$this->addConditionsToSelect($sel);
+		//$this->addFiltersToSelect($sel, $options['where_list']);
+		//if (!empty($options['quicksearch']))
+		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
+		$sel->from($this->_info['name'], array("count(distinct `$column`) as value"));
+		
+		$rows=$this->fetchAll($sel)->current();
+		if ($rows)
+			$Results = $rows->value;
+		
+		return $Results;
+	}
+	
+
+	public function getBlockDistinct($start, $length, $column, $state) {
+		$Results = array();
+		
+		$sel=$this->select();
+		$this->addConditionsToSelect($sel);
+		//$this->addFiltersToSelect($sel, $options['where_list']);
+		//if (!empty($options['quicksearch']))
+		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
+			$sel->from($this->_info['name'], array("{$column} as value"));
+		$sel->distinct();
+		$sel->limit($length,$start);
+		
+		$sel->order(array($column));
+			
+		$rows=$this->fetchAll($sel);
+		$this->log->debug($rows[0]->toArray());
+		if ($rows)
+			$Results = $rows->toArray();
+		
+		return $Results;
+	}
+	/************************************************/
+	/********** end support for list filter *********/
+	/************************************************/
+	
 	
 	public function LookupRowFromKey($key, $state=null) {
 		
@@ -253,6 +312,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	}
 	
 
+	public function getGridState() {
+		return $this->_gridState;
+	}
 	
 	public function StateToJSON() {
 		
