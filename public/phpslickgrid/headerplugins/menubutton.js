@@ -19,6 +19,8 @@
 		var HeaderCellRender 		= new Slick.Event();
 		var BeforeHeaderCellDestroy = new Slick.Event();
 		
+		var _grid = null;
+		
 		var $dialog=null; // div of the dialog box.
 		
 		function init(grid) {
@@ -34,6 +36,10 @@
 	      
 	      // Hide the menu on outside click.
 	      $(document.body).bind("mousedown", handleBodyMouseDown);
+		}
+		
+		function getGrid() {
+			return _grid;
 		}
 		
 		function destroy() {
@@ -204,8 +210,8 @@
 			"init" : init,
 			"destroy" : destroy,
 			//"hideDialog" :hideDialog,
-			"registerPlugin": registerPlugin
-			//"getGrid": getGrid,
+			"registerPlugin": registerPlugin,
+			"getGrid": getGrid
 
 			//"onBeforeMenuShow" : new Slick.Event()
 			//"onBeforeMenuHide" : new Slick.Event()

@@ -23,6 +23,9 @@ classes should alter those!
   overflow: hidden;
 }
 
+
+
+
 .slick-header-column.ui-state-default {
   position: relative;
   display: inline-block;
@@ -41,8 +44,10 @@ classes should alter those!
 }
 
 .slick-headerrow-column.ui-state-default {
-  padding: 4px;
+  padding-left: 4px;
 }
+
+
 
 .slick-header-column-sorted {
   font-style: italic;
