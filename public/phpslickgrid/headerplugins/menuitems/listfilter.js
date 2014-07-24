@@ -29,6 +29,8 @@
 		
 		self.selected = new Array();
 		
+		self.mode = "NOT IN";
+		
 		var updateFilters = new Slick.Event();		
 		
 		
@@ -49,38 +51,30 @@
 		 */
 		function CheckboxFormatter(row, cell, value, columnDef, dataContext) {
 			
-			 if (self.selected['i'+dataContext['value']])
-				 return "<i class='fa fa-check-square'></i>";
-			 else
-				 return "<i class='fa fa-square-o'></i>";
-			//if (scope.options.columnDef.inFiltersMode==false) {
-				// We should include only what is checked in the array 
-//				if (scope.options.columnDef.inFilters['i'+dataContext['value']])
-//					return "<INPUT type=checkbox value='true'  checked  class='editor-checkbox' hideFocus>";
-//				else
-//					return "<INPUT type=checkbox value='true' class='editor-checkbox' hideFocus>";
-//			}
-//			else {
-//				// We should only include what is not checked in the array
-//				if (scope.options.columnDef.inFilters['i'+dataContext['value']])
-//					return "<INPUT type=checkbox value='true' class='editor-checkbox' hideFocus>";
-//				else
-//					return "<INPUT type=checkbox value='true'  checked  class='editor-checkbox' hideFocus>";	
-//			}
+			if (self.mode == "NOT IN") {
+				if (self.selected['i'+dataContext['value']])
+					 return "<i class='fa fa-square-o'></i>";
+				 else
+					 return "<i class='fa fa-check-square'></i>";
+			}
+			else {
+				if (self.selected['i'+dataContext['value']])
+					 return "<i class='fa fa-check-square'></i>";
+				 else
+					 return "<i class='fa fa-square-o'></i>";
+			}
+				
 		  }
 		
-		function showDialog($dialog,activeColumn,$activeHeaderColumn,_self) {
+		function showDialog($dialog,activeColumn,$activeHeaderColumn,parent) {
 			
 			self.column_def = activeColumn;	// Column definition
 			
-			self.parentGrid =  _self.getGrid();
+			self.parentGrid =  parent.getGrid();
+			
+			self.rowHeight = self.parentGrid.getOptions().rowHeight;
 			
 			self.gridLength = 0;
-			
-			self.rowHeight = _self.getGrid().getOptions().rowHeight;
-			//console.log(_self.getGrid().getOptions().rowHeight);
-			
-			
 			
 			// Make sure our column has a list filter definition. 
 			if (typeof activeColumn.ListFilter == 'undefined') {
@@ -129,9 +123,36 @@
 			self.GridCheck.onHeaderRowCellRendered.subscribe(function(e, args) {
 				
 				$(args.node).empty();
-				$(args.node).click(function(e) {alert("select all");});
+				$(args.node).click(function(e) {
+					
+					$(args.node).empty();
+					
+					if (Object.keys(self.selected).length!=0) {
+						self.mode="NOT IN";
+						$("<i class='fa fa-check-square'></i>")
+							.appendTo(args.node);
+					}
+					else {
+					
+						if (self.mode=="NOT IN") {
+							self.mode="IN";
+							$("<i class='fa fa-square-o'></i>")
+								.appendTo(args.node);
+						}
+						else {
+							self.mode="NOT IN";
+							$("<i class='fa fa-check-square'></i>")
+								.appendTo(args.node);
+						}
+					}
+					self.selected = new Array();
+					self.GridCheck.invalidate();
+				
+				});
+				
 				if (args.column.id=="selected") {
-					self.$allIcon=$("<i class='fa fa-check-square'></i>")
+					self.$allIcon=$(args.node);
+					$("<i class='fa fa-check-square'></i>")
 					.appendTo(args.node);
 					
 				}
@@ -156,11 +177,13 @@
 			    self.$allIcon.empty();
 			    //alert(Object.keys(self.selected).length);
 			    if (Object.keys(self.selected).length!=0) {
-			    	$(self.$allIcon).replaceWith( "<i class='fa fa-minus-square'></i>" );
+			    	
+			    	$( "<i class='fa fa-minus-square'></i>" ).appendTo(self.$allIcon);
+			    	
 			    }
 			    else {
 			    	//alert("o");
-			    	$(self.$allIcon).replaceWith( "<i class='fa fa-check-square'></i>" );
+			    	$( "<i class='fa fa-check-square'></i>" ).appendTo(self.$allIcon);
 			    }
 			    
 			    //self.selected['i'+value]=self.selected['i'+value]?false:true;
@@ -192,7 +215,7 @@
 			//console.log("GetLength()");
 			//return parseInt(service.getDistinctLength(self.column_def.id,self.state));
 			if (self.gridLength!= 0)
-				return parseInt(self.gridLength)+1;
+				return parseInt(self.gridLength);
 			
 			service.getDistinctLength(self.column_def.id,self.state,
 					{'success' : 
@@ -205,7 +228,7 @@
 						} 
 					});
 			
-			return parseInt(self.gridLength)+2;
+			return parseInt(self.gridLength);
 			
 		}
 		
@@ -215,16 +238,10 @@
 		
 		function getItem(item) {
 			
-			//if (item == 0) {
-			//	return {'selected':true,'value':'(Select All)'};
-			//}
-			
-			var blockSize=20;
+			var blockSize=15;
 			var block = Math.floor(item/blockSize);  
 			var offset = item%blockSize;
 			var blockStart = block*blockSize;
-			
-			
 			
 			if (self.buffer[block]==undefined) {
 				self.buffer[block] = new Array();
@@ -244,16 +261,13 @@
 						} 
 					});
 			}
-			
-			
+						
 			if (self.buffer[block][offset] != undefined) {
 				self.buffer[block][offset]['selected']=false;
 				if (self.selected[self.buffer[block][offset]['value']]==true) {
 					self.buffer[block][offset]['selected']=true;
 				}
 			}
-			
-			
 			
 			return self.buffer[block][offset];
 		}
