@@ -27,9 +27,9 @@
 		
 		self.$listfilter = null;
 		
-		self.selected = new Array();
+		//self.selected = new Array();
 		
-		self.mode = "NOT IN";
+		//self.mode = "NOT IN";
 		
 		var updateFilters = new Slick.Event();		
 		
@@ -51,14 +51,14 @@
 		 */
 		function CheckboxFormatter(row, cell, value, columnDef, dataContext) {
 			
-			if (self.mode == "NOT IN") {
-				if (self.selected['i'+dataContext['value']])
+			if (self.column_def.list_filter_mode == "NOT IN") {
+				if (self.column_def.list_selected[dataContext['value']])
 					 return "<i class='fa fa-square-o'></i>";
 				 else
 					 return "<i class='fa fa-check-square'></i>";
 			}
 			else {
-				if (self.selected['i'+dataContext['value']])
+				if (self.column_def.list_selected[dataContext['value']])
 					 return "<i class='fa fa-check-square'></i>";
 				 else
 					 return "<i class='fa fa-square-o'></i>";
@@ -74,12 +74,13 @@
 			
 			self.rowHeight = self.parentGrid.getOptions().rowHeight;
 			
-			self.gridLength = 0;
+			self.gridLength = 0;  // No items match your search.
 			
-			// Make sure our column has a list filter definition. 
-			if (typeof activeColumn.ListFilter == 'undefined') {
-				activeColumn.ListFilter = new Object();
-				activeColumn.ListFilterIncusive = false;
+			// Prime the column definition with our list filter properties
+			if (self.column_def.list_filter_mode == undefined) {
+				self.column_def.list_filter_mode = "NOT IN";
+				self.column_def.list_selected = {};
+				self.column_def.list_filter_contains = "";
 			}
 			
 			self.buffer = new Array();		// Buffer for data cache
@@ -114,52 +115,53 @@
 			
 			self.GridColumns = [  
 			                   {id: "selected", name: "<i class='fa fa-search'></i>", field: "selected", width: 25, minWidth:25, maxWidth:25, formatter: CheckboxFormatter, cssClass:'no-scroll'},
-			                   {id: "value", name: "<input id='jesfgrgl' type='text' style='width:"+(width-60)+"px;margin:0;padding:0;border:1px;border-style:solid;min-width:200px;' />", field: "value", width: width}
+			                   {id: "value", name: "<input id='listfilter_txt' type='text' style='width:"+(width-60)+"px;margin:0;padding:0;border:1px;border-style:solid;min-width:200px;' />", field: "value", width: width}
 			                     ];
 			
 			self.GridCheck = new Slick.Grid($checkBoxDiv, self, self.GridColumns, self.CheckboxGridOptions);
 
+			
+			
 			// Build (Select All) header under search header.
 			self.GridCheck.onHeaderRowCellRendered.subscribe(function(e, args) {
 				
-				$(args.node).empty();
-				$(args.node).click(function(e) {
-					
+				function setMode(args) {
 					$(args.node).empty();
 					
-					if (Object.keys(self.selected).length!=0) {
-						self.mode="NOT IN";
+					if (Object.keys(self.column_def.list_selected).length!=0) {
+						self.column_def.list_filter_mode="NOT IN";
 						$("<i class='fa fa-check-square'></i>")
 							.appendTo(args.node);
 					}
 					else {
 					
-						if (self.mode=="NOT IN") {
-							self.mode="IN";
+						if (self.column_def.list_filter_mode=="NOT IN") {
+							self.column_def.list_filter_mode="IN";
 							$("<i class='fa fa-square-o'></i>")
 								.appendTo(args.node);
 						}
 						else {
-							self.mode="NOT IN";
+							self.column_def.list_filter_mode="NOT IN";
 							$("<i class='fa fa-check-square'></i>")
 								.appendTo(args.node);
 						}
 					}
-					self.selected = new Array();
+					self.column_def.list_selected = new Array();
 					self.GridCheck.invalidate();
-				
-				});
-				
-				if (args.column.id=="selected") {
-					self.$allIcon=$(args.node);
-					$("<i class='fa fa-check-square'></i>")
-					.appendTo(args.node);
 					
 				}
 				
+				$(args.node).click(function(e) { setMode(args);});
+			
+				// Set our default icon and string
+				if (args.column.id=="selected") {
+					self.$allIcon=$(args.node);
+					$("<i class='fa fa-check-square'></i>").appendTo(args.node);
+				}
+				
 				if (args.column.id=="value") {
-					self.$allText=$("<div>(Select All)</div>")
-					.appendTo(args.node);
+					self.$allText=$(args.node);
+					$("<div>(Select All)</div>").appendTo(args.node);
 				}
 				
 		    });
@@ -169,14 +171,19 @@
 				var cell = self.GridCheck.getCellFromEvent(e);
 			    var value=self.getItem(cell.row).value;
 			    
-			    if (self.selected['i'+value])
-			    	delete self.selected['i'+value];
+			    // Prepend "i" to force uniqueness
+			    // otherwise a value like "length" or "size" would
+			    // have a name conflict with the built in properties.
+			    if (self.column_def.list_selected[value])
+			    	delete self.column_def.list_selected[value];
 			    else
-			    	self.selected['i'+value]=true;
+			    	self.column_def.list_selected[value]=true;
+			    
+			    //self.column_def.list_selected['size']=true;
 			    
 			    self.$allIcon.empty();
 			    //alert(Object.keys(self.selected).length);
-			    if (Object.keys(self.selected).length!=0) {
+			    if (Object.keys(self.column_def.list_selected).length!=0) {
 			    	
 			    	$( "<i class='fa fa-minus-square'></i>" ).appendTo(self.$allIcon);
 			    	
@@ -189,14 +196,57 @@
 			    //self.selected['i'+value]=self.selected['i'+value]?false:true;
 			    
 				//alert("Check single "+value+" "+self.selected['i'+value]);
-			    console.log(Object.keys(self.selected).length);
+			    //console.log(Object.keys(self.column_def.list_selected).length);
 				
+			    console.log("*******************************");
+			    console.log(self.column_def.list_filter_mode);
+			    // Can be converted to string in PHP by $in = "'".implode("','",list_selected)."'";
+			    console.log(Object.keys(self.column_def.list_selected));
+			    
+			    if (self.updateFilters.notify(args) == false) {
+					return;
+				}
+			    
 				self.GridCheck.updateRow(cell.row);
 		        e.stopPropagation();
 			});
 			
 			
 			self.GridCheck.init();
+			
+			// On search entry change wait a bit then update gird and parent grid.
+			$("#listfilter_txt").on('change keyup paste',function(e){
+				
+				var element = this;
+				setTimeout(function () {
+				    var text = $(element).val();
+				    // do something with text
+				    
+				    self.$allText.empty();
+					if ($("#listfilter_txt").val().length==0)
+						$("<div>(Select All)</div>").appendTo(self.$allText);
+					else
+						$("<div>(Select All Search Results)</div>").appendTo(self.$allText);
+					
+					// Hide the "(Selelect All)" header row
+					$(".slick-headerrow-columns").css("height","0px");
+					self.GridCheck.resizeCanvas();
+					
+					// Show no results message
+					$("<div>No items match your search.</div>")
+						.css("line-height","300px")
+						.css("text-align","center")
+						.css("vertical-align","middle")
+						//.css("position","absolute")
+						.css("marginTop","-=300px")
+						//.css("z-index","10000")
+						.appendTo(self.$listfilter);
+					
+					
+					
+				  }, 100);
+				
+			});
 
 		}
 		
@@ -264,7 +314,7 @@
 						
 			if (self.buffer[block][offset] != undefined) {
 				self.buffer[block][offset]['selected']=false;
-				if (self.selected[self.buffer[block][offset]['value']]==true) {
+				if (self.column_def.list_selected[self.buffer[block][offset]['value']]==true) {
 					self.buffer[block][offset]['selected']=true;
 				}
 			}
@@ -280,7 +330,9 @@
 			"hideDialog" :hideDialog,
 			"appliesToColumn" : appliesToColumn,
 			"getLength": getLength,
-			"getItem": getItem
+			"getItem": getItem,
+			
+			"updateFilters": updateFilters
 			//"getGrid": getGrid,
 
 			//"onBeforeMenuShow" : new Slick.Event()

@@ -22,6 +22,43 @@ where grid_id=64
 
 Could be used with grid.scrollCellIntoView(100,0) to find the active row on resort.
 
+
+Interesting select for higher performance, forces Deferred join:
+
+SELECT  l.id, value, LENGTH(stuffing) AS len
+FROM    (
+        SELECT  id
+        FROM    t_limit
+        ORDER BY
+                id
+        LIMIT 150000, 10
+        ) o
+JOIN    t_limit l
+ON      l.id = o.id
+ORDER BY
+        l.id
+        
+        
+My Idea:
+SELECT *
+FROM   {$TableName}
+JOIN (SELECT {$Primary_Key}
+      FROM   {$Table_Name}
+      ORDER  BY {$Order_By}
+      WHERE  {$Where}
+      LIMIT  {$Start}, {$Size}) AS t ON t.{$Primary_Key} = products.{$Primary_Key};  
+ORDER BY {$Order_By}
+
+NOTES:  For performance a "Deferred" Join might be interesting as this model uses the LIMIT clause 
+with large data sets.
+http://www.iheavy.com/2013/06/19/3-ways-to-optimize-for-paging-in-mysql/
+http://explainextended.com/2009/10/23/mysql-order-by-limit-performance-late-row-lookups/
+http://devoluk.com/mysql-limit-offset-performance.html
+
+NOTES: This application relies on count(*) ALOT.  MySQL and MariaDB have performance implications
+when the storage engine is InnoDB, XtraDb Archive or CSV.   For best performance use Aria or MyISAM.
+
+
  * @author jstormes
  *
  */
@@ -584,6 +621,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
+			
+			$this->log->debug($state);
 
 			$Results=array();
 				

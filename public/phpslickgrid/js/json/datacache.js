@@ -235,6 +235,7 @@
 					if (String(data[i][self.state.upd_dtm_col]) > String(self.state.newestRecord))
 						self.state.newestRecord = data[i][self.state.upd_dtm_col];
 				
+				// TODO: This might be better in getItem.
 				if (typeof data[i][self.state.primay_col] != 'undefined') 
 					if (String(data[i][self.state.primay_col]) == String(self.state.localStorage.activeRow.key))
 						onActiveKeyLoaded.notify({
