@@ -679,11 +679,17 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$Results = $this->fetchAll($select)->toArray();
 			}
 				
-			return ($Results);
+			// Hook into inherited callback
+			return $this->_getBlock($start, $length, $state, $Results);
+
 		}
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
 		}
+	}
+	
+	public function _getBlock($start, $length, $state, $results) {
+		return $results;
 	}
 	
 	
