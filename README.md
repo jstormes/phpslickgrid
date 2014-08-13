@@ -4,7 +4,7 @@
 
 Find the outstanding SlickGrid component at [SlickGrid](https://github.com/mleibman/SlickGrid).
 
-Some highlights:
+**Some highlights:**
 
 * Lazy loading of data to the browser (only a small amount of data is kept browser side)
 * Create grids quickly by reflecting MySQL tables to gird view
@@ -14,7 +14,10 @@ Some highlights:
 * Full CRUD (Create, Read, Update, Delete) support
 * Support for millions of rows
 
-stuff.
+**Implementation**
+
+On the server side the data is feed to the browser from an extended version of `Zend_Db_Table_Abstract` called `PHPSlickGrid_Db_Table`.  This class uses the underlying SQL Schema as the bases for building the SlickGrid configuration.  The concept is that creating a SlickGrid in the view should be as easy a creating a table in MySQL, but if needed the model can much more complex. 
+
 
 Ideas:
 

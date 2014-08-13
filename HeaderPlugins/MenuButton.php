@@ -45,7 +45,7 @@ class PHPSlickGrid_HeaderPlugins_MenuButton  extends PHPSlickGrid_HeaderPlugins_
  		
  		$header_plugin_id=1;
  		foreach($this->Plugins as $plugin) {
- 			$HTML .= $plugin->render($header_plugin_id++, $this);
+ 			$HTML .= $plugin->render($header_plugin_id++, $this, $GridName);
  		}
  		
  		$HTML .= "{$GridName}.registerPlugin(plugin_{$plugin_id}_menu);\n\n";

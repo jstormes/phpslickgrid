@@ -250,12 +250,13 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	/************************************************/
 	/******** begin support for list filter *********/
 	/************************************************/
-	public function getDistinctLength($column, $options) {
+	public function getDistinctLength($column, $state) {
 		
 		$Results = 0;
 		
 		$sel=$this->select();
 		$this->addConditionsToSelect($sel);
+		$sel = $this->addFiltersToSelect($state['filters'],$sel);
 		//$this->addFiltersToSelect($sel, $options['where_list']);
 		//if (!empty($options['quicksearch']))
 		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
@@ -274,6 +275,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$sel=$this->select();
 		$this->addConditionsToSelect($sel);
+		$sel = $this->addFiltersToSelect($state['filters'],$sel);
 		//$this->addFiltersToSelect($sel, $options['where_list']);
 		//if (!empty($options['quicksearch']))
 		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
@@ -621,7 +623,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
-			
+			$this->log->debug("state");
 			$this->log->debug($state);
 
 			$Results=array();
@@ -631,6 +633,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				// Build core select
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
+				$select = $this->addFiltersToSelect($state['filters'],$select);
 	
 				// set limits
 				$select->where($this->_primary_col."<= ?", $state['sortedMaxPrimary']);
@@ -651,6 +654,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 					$select = $this->buildSelect($state);
 					$select = $this->addConditionsToSelect($select);
+					$select = $this->addFiltersToSelect($state['filters'],$select);
 						
 					$select->where($this->_primary_col."> ?", $state['sortedMaxPrimary']);
 					$select->limit($length-count($Results),0);
@@ -686,6 +690,17 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		catch (Exception $ex) { // push the exception code into JSON range.
 			throw new Exception($ex, 32001);
 		}
+	}
+	
+	public function addFiltersToSelect($filters, Zend_Db_Select $select) {
+		
+		foreach ($filters as $column=>$filter) {
+			$select->where(str_replace("$",".",$column)." like ?","%".$filter['list_filter_contains']."%");
+			$this->log->debug($column);
+			$this->log->debug($filter);
+		}
+		
+		return $select;
 	}
 	
 	public function _getBlock($start, $length, $state, $results) {

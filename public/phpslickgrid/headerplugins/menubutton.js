@@ -66,7 +66,7 @@
 		
 		function registerPlugin(item) {
 			MenuItems.push(item);
-			item.init(self);
+			item.init(self, grid, data);
 		}
 		
 		/**

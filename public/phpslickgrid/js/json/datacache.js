@@ -99,7 +99,7 @@
 			
 			/* Sorts and filters */
 			order_list : [],		// Current sort order
-			filters : [],  			// Current filters
+			filters : {},  			// Current filters
 				
 			/* List of active rows */
 			active_buffers : [],	// List of actively cached slickgrid rows
@@ -153,6 +153,7 @@
 	//	var onSync = new Slick.Event();
 		var onActiveKeyLoaded = new Slick.Event();
 		var onRowTotalCountChanged = new Slick.Event();
+		var onActiveRowFound = new Slick.Event();
 
 		
 		
@@ -540,6 +541,7 @@
 			"getActiveCell" : getActiveCell,
 			"getActiveKey" : getActiveKey,
 			"onActiveKeyLoaded" : onActiveKeyLoaded,
+			"onActiveRowFound" : onActiveRowFound,
 			"invalidate" : invalidate,
 			"saveColumns" : saveColumns,
 			"restoreColumns" : restoreColumns,

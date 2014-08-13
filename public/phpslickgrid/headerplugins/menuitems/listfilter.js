@@ -13,9 +13,11 @@
 	
 	
 	
-	function ListFilter(options) {
+	function ListFilter(options, grid, data) {
 		
 		var self= this;
+		
+		var listfilter = null;
 		
 		var default_options ={};
 		
@@ -24,6 +26,8 @@
 		var service = new jQuery.Zend.jsonrpc({url: options.jsonrpc, async:true, 
 		    'error': function(data) {alert(data);},
 		    'exceptionHandler': function(data) {alert(data);} });    // Simple error and exception handlers
+		//var service = data;
+		//console.log(service);
 		
 		self.$listfilter = null;
 		
@@ -35,7 +39,7 @@
 		
 		
 		function init(parent) {
-			
+
 		}
 		
 		function destroy(parent) {
@@ -51,14 +55,14 @@
 		 */
 		function CheckboxFormatter(row, cell, value, columnDef, dataContext) {
 			
-			if (self.column_def.list_filter_mode == "NOT IN") {
-				if (self.column_def.list_selected[dataContext['value']])
+			if (listfilter.list_filter_mode == "NOT IN") {
+				if (listfilter.list_selected[dataContext['value']])
 					 return "<i class='fa fa-square-o'></i>";
 				 else
 					 return "<i class='fa fa-check-square'></i>";
 			}
 			else {
-				if (self.column_def.list_selected[dataContext['value']])
+				if (listfilter.list_selected[dataContext['value']])
 					 return "<i class='fa fa-check-square'></i>";
 				 else
 					 return "<i class='fa fa-square-o'></i>";
@@ -70,18 +74,50 @@
 			
 			self.column_def = activeColumn;	// Column definition
 			
-			self.parentGrid =  parent.getGrid();
+			//self.parentGrid =  parent.getGrid();
 			
-			self.rowHeight = self.parentGrid.getOptions().rowHeight;
+			//self.gridData = self.parentGrid.getData();
 			
-			self.gridLength = 0;  // No items match your search.
+			//self.gridState = self.gridData.self.state;
+			
+			//self.filters = self.gridData.self.state.localStorage.filters = [];
+			
+			//console.log(self.gridData.self.state.localStorage);
+			
+			// match the row height from the source grid.
+			self.rowHeight = grid.rowHeight;
+			
+			self.gridLength = 0;  // default to, No items match your search.
+			
+			//console.log(self.column_def.id);
+			//data.self.state.filters={'test':'tests'};
+			
+			if (data.self.state.filters[self.column_def.field] == undefined) {
+				
+				console.log("Defining column");
+				listfilter = {};
+				listfilter.list_filter_mode = "NOT IN";
+				listfilter.list_selected = {};
+				listfilter.list_filter_contains = "";
+				
+				data.self.state.filters[self.column_def.field]=listfilter;
+				
+				
+				//data.self.state.filters[self.column_def.id]={};
+				//data.self.state.filters[self.column_def.id].list_filter_mode = "NOT IN";
+				//data.self.state.filters[self.column_def.id].list_selected = {};
+				//data.self.state.filters[self.column_def.id].list_filter_contains = "";
+			}
+			
+			//var listfilter = data.self.state.filters[self.column_def.id];
+			console.log(listfilter);
 			
 			// Prime the column definition with our list filter properties
-			if (self.column_def.list_filter_mode == undefined) {
-				self.column_def.list_filter_mode = "NOT IN";
-				self.column_def.list_selected = {};
-				self.column_def.list_filter_contains = "";
-			}
+			//if (self.column_def.list_filter_mode == undefined) {
+			//	self.column_def.list_filter_mode = "NOT IN";
+			//	self.column_def.list_selected = {};
+			//	self.column_def.list_filter_contains = "";
+			//}
 			
 			self.buffer = new Array();		// Buffer for data cache
 			self.quicksearch = '';	// Quick search string
@@ -125,44 +161,48 @@
 			// Build (Select All) header under search header.
 			self.GridCheck.onHeaderRowCellRendered.subscribe(function(e, args) {
 				
-				function setMode(args) {
-					$(args.node).empty();
-					
-					if (Object.keys(self.column_def.list_selected).length!=0) {
-						self.column_def.list_filter_mode="NOT IN";
-						$("<i class='fa fa-check-square'></i>")
-							.appendTo(args.node);
-					}
-					else {
-					
-						if (self.column_def.list_filter_mode=="NOT IN") {
-							self.column_def.list_filter_mode="IN";
-							$("<i class='fa fa-square-o'></i>")
-								.appendTo(args.node);
-						}
-						else {
-							self.column_def.list_filter_mode="NOT IN";
-							$("<i class='fa fa-check-square'></i>")
-								.appendTo(args.node);
-						}
-					}
-					self.column_def.list_selected = new Array();
-					self.GridCheck.invalidate();
-					
-				}
-				
-				$(args.node).click(function(e) { setMode(args);});
-			
 				// Set our default icon and string
 				if (args.column.id=="selected") {
 					self.$allIcon=$(args.node);
 					$("<i class='fa fa-check-square'></i>").appendTo(args.node);
 				}
 				
+				// set our default notification string
 				if (args.column.id=="value") {
 					self.$allText=$(args.node);
 					$("<div>(Select All)</div>").appendTo(args.node);
 				}
+				
+				// function to set the mode.
+				function setMode(args) {
+					// Empty icon cell
+					self.$allIcon.empty();
+					
+					if (Object.keys(listfilter.list_selected).length!=0) {
+						listfilter.list_filter_mode="NOT IN";
+						$("<i class='fa fa-check-square'></i>")
+							.appendTo(self.$allIcon);
+					}
+					else {
+					
+						if (listfilter.list_filter_mode=="NOT IN") {
+							listfilter.list_filter_mode="IN";
+							$("<i class='fa fa-square-o'></i>")
+								.appendTo(self.$allIcon);
+						}
+						else {
+							listfilter.list_filter_mode="NOT IN";
+							$("<i class='fa fa-check-square'></i>")
+								.appendTo(self.$allIcon);
+						}
+					}
+					listfilter.list_selected = new Array();
+					self.GridCheck.invalidate();
+					
+				}
+				
+				// on click of the header row set the mode
+				$(args.node).click(function(e) { setMode(args);});
 				
 		    });
 			
@@ -174,16 +214,16 @@
 			    // Prepend "i" to force uniqueness
 			    // otherwise a value like "length" or "size" would
 			    // have a name conflict with the built in properties.
-			    if (self.column_def.list_selected[value])
-			    	delete self.column_def.list_selected[value];
+			    if (listfilter.list_selected[value])
+			    	delete listfilter.list_selected[value];
 			    else
-			    	self.column_def.list_selected[value]=true;
+			    	listfilter.list_selected[value]=true;
 			    
 			    //self.column_def.list_selected['size']=true;
 			    
 			    self.$allIcon.empty();
 			    //alert(Object.keys(self.selected).length);
-			    if (Object.keys(self.column_def.list_selected).length!=0) {
+			    if (Object.keys(listfilter.list_selected).length!=0) {
 			    	
 			    	$( "<i class='fa fa-minus-square'></i>" ).appendTo(self.$allIcon);
 			    	
@@ -198,14 +238,20 @@
 				//alert("Check single "+value+" "+self.selected['i'+value]);
 			    //console.log(Object.keys(self.column_def.list_selected).length);
 				
+			    data.self.state.filters[self.column_def.field]=listfilter;
+			    
 			    console.log("*******************************");
-			    console.log(self.column_def.list_filter_mode);
+			    console.log(listfilter.list_filter_mode);
 			    // Can be converted to string in PHP by $in = "'".implode("','",list_selected)."'";
-			    console.log(Object.keys(self.column_def.list_selected));
+			    console.log(Object.keys(listfilter.list_selected));
+			    
+			    
 			    
 			    if (self.updateFilters.notify(args) == false) {
 					return;
 				}
+			    
+			    //self.parentGrid.invalidate();
 			    
 				self.GridCheck.updateRow(cell.row);
 		        e.stopPropagation();
@@ -228,24 +274,37 @@
 					else
 						$("<div>(Select All Search Results)</div>").appendTo(self.$allText);
 					
+					listfilter.list_filter_contains = text;
+					
+					data.self.state.filters[self.column_def.field]=listfilter;
+					
+					
+					self.gridLength=0;
+					self.buffer = [];
+					self.GridCheck.invalidate();
+					
+					if (self.updateFilters.notify() == false) {
+						return;
+					}
+					
 					// Hide the "(Selelect All)" header row
-					$(".slick-headerrow-columns").css("height","0px");
-					self.GridCheck.resizeCanvas();
+//					$(".slick-headerrow-columns").css("height","0px");
+//					self.GridCheck.resizeCanvas();
 					
 					// Show no results message
-					$("<div>No items match your search.</div>")
-						.css("line-height","300px")
-						.css("text-align","center")
-						.css("vertical-align","middle")
-						//.css("position","absolute")
-						.css("marginTop","-=300px")
-						//.css("z-index","10000")
-						.appendTo(self.$listfilter);
+//					$("<div>No items match your search.</div>")
+//						.css("line-height","300px")
+//						.css("text-align","center")
+//						.css("vertical-align","middle")
+//						//.css("position","absolute")
+//						.css("marginTop","-=300px")
+//						//.css("z-index","10000")
+//						.appendTo(self.$listfilter);
 					
 					
 					
 				  }, 100);
-				
+				e.stopPropagation();
 			});
 
 		}
@@ -267,7 +326,7 @@
 			if (self.gridLength!= 0)
 				return parseInt(self.gridLength);
 			
-			service.getDistinctLength(self.column_def.id,self.state,
+			service.getDistinctLength(self.column_def.id,data.self.state,
 					{'success' : 
 						function(length){
 							if (length != self.gridLength) {
@@ -296,7 +355,7 @@
 			if (self.buffer[block]==undefined) {
 				self.buffer[block] = new Array();
 			
-				service.getBlockDistinct(blockStart, blockSize, self.column_def.id, self.state,
+				service.getBlockDistinct(blockStart, blockSize, self.column_def.id, data.self.state,
 					{
 					'success' : 
 						function(data){
@@ -314,7 +373,7 @@
 						
 			if (self.buffer[block][offset] != undefined) {
 				self.buffer[block][offset]['selected']=false;
-				if (self.column_def.list_selected[self.buffer[block][offset]['value']]==true) {
+				if (listfilter.list_selected[self.buffer[block][offset]['value']]==true) {
 					self.buffer[block][offset]['selected']=true;
 				}
 			}
