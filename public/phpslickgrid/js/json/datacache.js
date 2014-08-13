@@ -153,7 +153,7 @@
 	//	var onSync = new Slick.Event();
 		var onActiveKeyLoaded = new Slick.Event();
 		var onRowTotalCountChanged = new Slick.Event();
-		var onActiveRowFound = new Slick.Event();
+		var onStateChanged = new Slick.Event();
 
 		
 		
@@ -298,17 +298,35 @@
 		
 		function invalidate() {
 						
-			self.service.setAsync(false);
-			var newState = self.service.resetState(self.state);
-			self.state = $.extend(true, {}, self.state, newState);
+//			self.service.setAsync(false);
+//			var newState = self.service.resetState(self.state);
+//			self.state = $.extend(true, {}, self.state, newState);
+//		
+//			self.state.active_buffers 	= [];
+//			self.state.activeKeys 		= [];		
+//			
+//			self.buffer 		= new Array();
+//			self.reverseLookup 	= new Array();
+//			
+//			self.service.setAsync(true);
+			
+			
+			// onStateChanged
+			self.service.resetState(self.state ,{
+				'success' : function(newState) {
+					self.state = $.extend(true, {}, self.state, newState);
+					onStateChanged.notify(self.state);
+				}
+			});
+			
+			self.state.localStorage.activeRow.row = null;
 		
 			self.state.active_buffers 	= [];
 			self.state.activeKeys 		= [];		
 			
 			self.buffer 		= new Array();
-			self.reverseLookup 	= new Array();
-			
-			self.service.setAsync(true);
+			self.reverseLookup 	= new Array();			
+
 		}
 		
 		function getSort() {
@@ -541,7 +559,7 @@
 			"getActiveCell" : getActiveCell,
 			"getActiveKey" : getActiveKey,
 			"onActiveKeyLoaded" : onActiveKeyLoaded,
-			"onActiveRowFound" : onActiveRowFound,
+			"onStateChanged" : onStateChanged,
 			"invalidate" : invalidate,
 			"saveColumns" : saveColumns,
 			"restoreColumns" : restoreColumns,

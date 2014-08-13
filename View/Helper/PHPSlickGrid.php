@@ -115,6 +115,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= $this->onAddNewRow();
 		$HTML .= $this->onActiveCellChanged();
 		
+		$HTML .= $this->onStateChanged();
+		
 		$HTML .= $this->onActiveKeyLoaded();
 		
 		$HTML .= $this->onColumnsReordered();
@@ -198,6 +200,24 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		
 	}
 	
+	private function onStateChanged() {
+	
+		$GridName = $this->Table->_gridName;
+	
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire active cell selected from the grid to the data cache\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}Data.onStateChanged.subscribe(function (state) { \n";
+		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
+		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
+		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
+		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
+		$HTML .= "});\n\n";
+	
+		return $HTML;
+	
+	}
+	
 	private function onActiveKeyLoaded() {
 	
 		$GridName = $this->Table->_gridName;
@@ -256,10 +276,10 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= "  {$GridName}.invalidate();\n";
 		$HTML .= "  {$GridName}.render();\n";	
 		
-		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
-		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
-		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
-		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
+// 		$HTML .= "  {$GridName}.scrollCellIntoView({$GridName}Data.getActiveRow(),{$GridName}Data.getActiveCell());\n";
+// 		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
+// 		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
+// 		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
 		$HTML .= "});\n\n";
 		
 		return $HTML;
