@@ -284,12 +284,15 @@
 					}
 				}
 				
-				if (fetchSize!=0)
+				if (fetchSize!=0){
+					console.log("pre self.service.getBlock ***************");
+					console.log(self.state);
 					self.service.getBlock(start, (fetchSize), self.state, {
 						'success' : function(data) {
 							getBlock(start, data);
 						}
 					});
+				}
 			}
 			// return whatever we have.
 			return self.buffer["k"+row];
@@ -310,12 +313,18 @@
 //			
 //			self.service.setAsync(true);
 			
-			
+			console.log("invalidate *********");
+			console.log(self.state);
 			// onStateChanged
 			self.service.resetState(self.state ,{
 				'success' : function(newState) {
+					console.log("self.service.resetState *********************");
+					console.log(self.state);
 					self.state = $.extend(true, {}, self.state, newState);
+					console.log(self.state);
+					onRowCountChanged.notify();
 					onStateChanged.notify(self.state);
+					console.log(self.state);
 				}
 			});
 			

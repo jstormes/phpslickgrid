@@ -254,13 +254,17 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$Results = 0;
 		
+		$table_column = str_replace("$",".",$column); 
+		//$column = explode(".", $table_column);
+		//$column = $column[1];
+		
 		$sel=$this->select();
 		$this->addConditionsToSelect($sel);
-		$sel = $this->addFiltersToSelect($state['filters'],$sel);
+		$sel = $this->addFiltersToSelect($state['filters'],$sel,$column);
 		//$this->addFiltersToSelect($sel, $options['where_list']);
 		//if (!empty($options['quicksearch']))
 		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
-		$sel->from($this->_info['name'], array("count(distinct `$column`) as value"));
+		$sel->from($this->_info['name'], array("count(distinct {$table_column}) as value"));
 		
 		$rows=$this->fetchAll($sel)->current();
 		if ($rows)
@@ -273,17 +277,19 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlockDistinct($start, $length, $column, $state) {
 		$Results = array();
 		
+		$table_column = str_replace("$",".",$column);
+		
 		$sel=$this->select();
 		$this->addConditionsToSelect($sel);
-		$sel = $this->addFiltersToSelect($state['filters'],$sel);
+		$sel = $this->addFiltersToSelect($state['filters'],$sel, $column);
 		//$this->addFiltersToSelect($sel, $options['where_list']);
 		//if (!empty($options['quicksearch']))
 		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
-			$sel->from($this->_info['name'], array("{$column} as value"));
+			$sel->from($this->_info['name'], array("{$table_column} as value"));
 		$sel->distinct();
 		$sel->limit($length,$start);
 		
-		$sel->order(array($column));
+		$sel->order(array($table_column));
 			
 		$rows=$this->fetchAll($sel);
 		$this->log->debug($rows[0]->toArray());
@@ -302,6 +308,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		// Get basic select
 		$select = $this->buildSelect($state, true);
 		$select = $this->addConditionsToSelect($select);
+		
+		if ($state!=null)
+			$select = $this->addFiltersToSelect($state['filters'],$select);
 		
 		// Build our order by
 		foreach($state['order_list'] as $orderby) {
@@ -331,6 +340,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 * @return array
 	 */
 	public function resetState($state) {
+		
+		$this->log->debug("Reset State ***************************");
+		$this->log->debug($state);
 		try
 		{
 			$state['gridLength']       = $this->getLength($state);      // filtered row count
@@ -476,6 +488,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				// Get maximum primary key
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
+				
+				if ($state!=null)
+					$select = $this->addFiltersToSelect($state['filters'],$select);
 					
 				// Apply user filters
 				//$select = $this->addFilters($select, $state);
@@ -504,6 +519,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
 					
+				if ($state!=null)
+					$select = $this->addFiltersToSelect($state['filters'],$select);
+				
 				// Apply user filters
 				//$select = $this->addFilters($select, $state);
 					
@@ -528,6 +546,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				// Get total possible rows
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
+				
+				if ($state!=null)
+					$select = $this->addFiltersToSelect($state['filters'],$select);
+				
 				$count_select = $this->select();
 				$count_select->setIntegrityCheck(false);
 				$count_select->from(new Zend_Db_Expr("(".$select.")"), 'COUNT(*) as num');
@@ -544,12 +566,18 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	public function getLength($state=null) {
 	
+		//$this->log->debug("getLength");
+		//$this->log->debug($state);
+		
 		try
 		{
 			if ($this->_Length===null) {	
 				// Get row count for grid
 				$select = $this->buildSelect($state);
 				$select = $this->addConditionsToSelect($select);
+				
+				if ($state!=null)
+					$select = $this->addFiltersToSelect($state['filters'],$select);
 		
 				// Apply user filters
 				//$select = $this->addFilters($select, $state);
@@ -692,12 +720,25 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		}
 	}
 	
-	public function addFiltersToSelect($filters, Zend_Db_Select $select) {
+	public function addFiltersToSelect($filters, Zend_Db_Select $select, $ignore = null) {
 		
 		foreach ($filters as $column=>$filter) {
-			$select->where(str_replace("$",".",$column)." like ?","%".$filter['list_filter_contains']."%");
+			// get the table+column.
+			$table_column = str_replace("$",".",$column); 
+			$set = array_keys($filter['list_selected']);
+			$mode = $filter['list_filter_mode'];
+			
+			if (strlen($filter['list_filter_contains'])>0)
+				$select->where("{$table_column} like ?","%".$filter['list_filter_contains']."%");
+			
 			$this->log->debug($column);
+			$this->log->debug($ignore);
 			$this->log->debug($filter);
+			
+			if (count($filter['list_selected'])>0) {
+				if ($column!=$ignore)
+					$select->where("{$table_column} {$mode}(?)",$set);
+			}
 		}
 		
 		return $select;

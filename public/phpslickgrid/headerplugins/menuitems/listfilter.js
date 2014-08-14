@@ -108,6 +108,9 @@
 				//data.self.state.filters[self.column_def.id].list_selected = {};
 				//data.self.state.filters[self.column_def.id].list_filter_contains = "";
 			}
+			else {
+				listfilter = data.self.state.filters[self.column_def.field];
+			}
 			
 			//var listfilter = data.self.state.filters[self.column_def.id];
 			console.log(listfilter);
@@ -148,10 +151,10 @@
 
 			var width = self.column_def.width;
 			
-			
+			// Define our columns
 			self.GridColumns = [  
 			                   {id: "selected", name: "<i class='fa fa-search'></i>", field: "selected", width: 25, minWidth:25, maxWidth:25, formatter: CheckboxFormatter, cssClass:'no-scroll'},
-			                   {id: "value", name: "<input id='listfilter_txt' type='text' style='width:"+(width-60)+"px;margin:0;padding:0;border:1px;border-style:solid;min-width:200px;' />", field: "value", width: width}
+			                   {id: "value", name: "<input id='listfilter_txt' type='text' value='"+listfilter.list_filter_contains+"' style='width:"+(width-60)+"px;margin:0;padding:0;border:1px;border-style:solid;min-width:200px;' />", field: "value", width: width}
 			                     ];
 			
 			self.GridCheck = new Slick.Grid($checkBoxDiv, self, self.GridColumns, self.CheckboxGridOptions);
@@ -196,13 +199,20 @@
 								.appendTo(self.$allIcon);
 						}
 					}
-					listfilter.list_selected = new Array();
+					listfilter.list_selected = {};
 					self.GridCheck.invalidate();
 					
 				}
 				
 				// on click of the header row set the mode
-				$(args.node).click(function(e) { setMode(args);});
+				$(args.node).click(function(e) { 
+					setMode(args);
+					if (self.updateFilters.notify(args) == false) {
+						return;
+					}
+				});
+				
+				
 				
 		    });
 			
@@ -241,9 +251,9 @@
 			    data.self.state.filters[self.column_def.field]=listfilter;
 			    
 			    console.log("*******************************");
-			    console.log(listfilter.list_filter_mode);
+			    console.log(data.self.state.filters[self.column_def.field].list_filter_mode);
 			    // Can be converted to string in PHP by $in = "'".implode("','",list_selected)."'";
-			    console.log(Object.keys(listfilter.list_selected));
+			    console.log(Object.keys(data.self.state.filters[self.column_def.field].list_selected));
 			    
 			    
 			    
@@ -303,7 +313,7 @@
 					
 					
 					
-				  }, 1);
+				  }, 200);
 				e.stopPropagation();
 			});
 
@@ -326,7 +336,7 @@
 			if (self.gridLength!= 0)
 				return parseInt(self.gridLength);
 			
-			service.getDistinctLength(self.column_def.id,data.self.state,
+			service.getDistinctLength(self.column_def.field,data.self.state,
 					{'success' : 
 						function(length){
 							if (length != self.gridLength) {
@@ -355,7 +365,7 @@
 			if (self.buffer[block]==undefined) {
 				self.buffer[block] = new Array();
 			
-				service.getBlockDistinct(blockStart, blockSize, self.column_def.id, data.self.state,
+				service.getBlockDistinct(blockStart, blockSize, self.column_def.field, data.self.state,
 					{
 					'success' : 
 						function(data){
