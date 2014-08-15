@@ -42,12 +42,17 @@ ORDER BY
 My Idea:
 SELECT *
 FROM   {$TableName}
-JOIN (SELECT {$Primary_Key}
-      FROM   {$Table_Name}
-      ORDER  BY {$Order_By}
+JOIN (SELECT {$PrimaryKey}
+      FROM   {$TableName}
+      ORDER  BY {$OrderBy}
       WHERE  {$Where}
-      LIMIT  {$Start}, {$Size}) AS t ON t.{$Primary_Key} = products.{$Primary_Key};  
-ORDER BY {$Order_By}
+      LIMIT  {$Start}, {$Size}) AS t ON t.{$PrimaryKey} = {$TableName}.{$PrimaryKey} 
+ORDER BY {$OrderBy}
+
+function BuildInnerSelect();
+function BuildOuterSelect();
+
+$this->orderBy 
 
 NOTES:  For performance a "Deferred" Join might be interesting as this model uses the LIMIT clause 
 with large data sets.

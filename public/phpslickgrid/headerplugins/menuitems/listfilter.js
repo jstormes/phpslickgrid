@@ -293,24 +293,33 @@
 					self.buffer = [];
 					self.GridCheck.invalidate();
 					
+					
+					// TODO: this needs to be event driven.
+					// attached to the on length changed event
+					if (self.gridLength == 0) {
+						// Hide the "(Selelect All)" header row
+						$(".slick-headerrow-columns").css("height","0px");
+						self.GridCheck.resizeCanvas();
+						
+						// Show no results message
+						$("<div>No items match your search.</div>")
+							.css("line-height","300px")
+							.css("text-align","center")
+							.css("vertical-align","middle")
+							//.css("position","absolute")
+							.css("marginTop","-=300px")
+							//.css("z-index","10000")
+							.appendTo(self.$listfilter);
+					} 
+					else {
+						console.log("Resetting height!!!!!!!!!!!!!!!!!!");
+						$(".slick-headerrow-columns").css("height","22px");
+						self.GridCheck.resizeCanvas();
+					}
+					
 					if (self.updateFilters.notify() == false) {
 						return;
 					}
-					
-					// Hide the "(Selelect All)" header row
-//					$(".slick-headerrow-columns").css("height","0px");
-//					self.GridCheck.resizeCanvas();
-					
-					// Show no results message
-//					$("<div>No items match your search.</div>")
-//						.css("line-height","300px")
-//						.css("text-align","center")
-//						.css("vertical-align","middle")
-//						//.css("position","absolute")
-//						.css("marginTop","-=300px")
-//						//.css("z-index","10000")
-//						.appendTo(self.$listfilter);
-					
 					
 					
 				  }, 200);
@@ -334,7 +343,7 @@
 			//console.log("GetLength()");
 			//return parseInt(service.getDistinctLength(self.column_def.id,self.state));
 			if (self.gridLength!= 0)
-				return parseInt(self.gridLength);
+				return parseInt(self.gridLength)+1;
 			
 			service.getDistinctLength(self.column_def.field,data.self.state,
 					{'success' : 
@@ -347,7 +356,7 @@
 						} 
 					});
 			
-			return parseInt(self.gridLength);
+			return parseInt(self.gridLength)+1;
 			
 		}
 		
