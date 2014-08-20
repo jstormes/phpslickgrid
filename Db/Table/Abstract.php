@@ -259,49 +259,61 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$Results = 0;
 		
-		$table_column = str_replace("$",".",$column); 
-		//$column = explode(".", $table_column);
-		//$column = $column[1];
-		
-		$sel=$this->select();
-		$this->addConditionsToSelect($sel);
-		$sel = $this->addFiltersToSelect($state['filters'],$sel,$column);
-		//$this->addFiltersToSelect($sel, $options['where_list']);
-		//if (!empty($options['quicksearch']))
-		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
-		$sel->from($this->_info['name'], array("count(distinct {$table_column}) as value"));
-		
-		$rows=$this->fetchAll($sel)->current();
-		if ($rows)
-			$Results = $rows->value;
-		
-		return $Results;
+		try
+		{
+			$table_column = str_replace("$",".",$column); 
+			//$column = explode(".", $table_column);
+			//$column = $column[1];
+			
+			$sel=$this->select();
+			$this->addConditionsToSelect($sel);
+			$sel = $this->addFiltersToSelect($state['filters'],$sel,$column);
+			//$this->addFiltersToSelect($sel, $options['where_list']);
+			//if (!empty($options['quicksearch']))
+			//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
+			$sel->from($this->_info['name'], array("count(distinct {$table_column}) as value"));
+			
+			$rows=$this->fetchAll($sel)->current();
+			if ($rows)
+				$Results = $rows->value;
+			
+			return $Results;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
 	}
 	
 
 	public function getBlockDistinct($start, $length, $column, $state) {
 		$Results = array();
 		
-		$table_column = str_replace("$",".",$column);
-		
-		$sel=$this->select();
-		$this->addConditionsToSelect($sel);
-		$sel = $this->addFiltersToSelect($state['filters'],$sel, $column);
-		//$this->addFiltersToSelect($sel, $options['where_list']);
-		//if (!empty($options['quicksearch']))
-		//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
-			$sel->from($this->_info['name'], array("{$table_column} as value"));
-		$sel->distinct();
-		$sel->limit($length,$start);
-		
-		$sel->order(array($table_column));
+		try
+		{
+			$table_column = str_replace("$",".",$column);
 			
-		$rows=$this->fetchAll($sel);
-		$this->log->debug($rows[0]->toArray());
-		if ($rows)
-			$Results = $rows->toArray();
-		
-		return $Results;
+			$sel=$this->select();
+			$this->addConditionsToSelect($sel);
+			$sel = $this->addFiltersToSelect($state['filters'],$sel, $column);
+			//$this->addFiltersToSelect($sel, $options['where_list']);
+			//if (!empty($options['quicksearch']))
+			//	$sel->where("$column LIKE ?",'%'.$options['quicksearch'].'%');
+				$sel->from($this->_info['name'], array("{$table_column} as value"));
+			$sel->distinct();
+			$sel->limit($length,$start);
+			
+			$sel->order(array($table_column));
+				
+			$rows=$this->fetchAll($sel);
+			//$this->log->debug($rows[0]->toArray());
+			if ($rows)
+				$Results = $rows->toArray();
+			
+			return $Results;
+		}
+		catch (Exception $ex) { // push the exception code into JSON range.
+			throw new Exception($ex, 32001);
+		}
 	}
 	/************************************************/
 	/********** end support for list filter *********/
@@ -346,8 +358,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	 */
 	public function resetState($state) {
 		
-		$this->log->debug("Reset State ***************************");
-		$this->log->debug($state);
+		//$this->log->debug("Reset State ***************************");
+		//$this->log->debug($state);
 		try
 		{
 			$state['gridLength']       = $this->getLength($state);      // filtered row count
@@ -656,8 +668,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
-			$this->log->debug("state");
-			$this->log->debug($state);
+			//$this->log->debug("state");
+			//$this->log->debug($state);
 
 			$Results=array();
 				
@@ -736,9 +748,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			if (strlen($filter['list_filter_contains'])>0)
 				$select->where("{$table_column} like ?","%".$filter['list_filter_contains']."%");
 			
-			$this->log->debug($column);
-			$this->log->debug($ignore);
-			$this->log->debug($filter);
+			//$this->log->debug($column);
+			//$this->log->debug($ignore);
+			//$this->log->debug($filter);
 			
 			if (count($filter['list_selected'])>0) {
 				if ($column!=$ignore)

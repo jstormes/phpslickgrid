@@ -154,6 +154,7 @@
 		var onActiveKeyLoaded = new Slick.Event();
 		var onRowTotalCountChanged = new Slick.Event();
 		var onStateChanged = new Slick.Event();
+		var onFiltersChanged = new Slick.Event();
 
 		
 		
@@ -285,9 +286,9 @@
 				}
 				
 				if (fetchSize!=0){
-					console.log("pre self.service.getBlock ***************");
-					console.log(self.state);
-					self.service.getBlock(start, (fetchSize), self.state, {
+					//console.log("pre self.service.getBlock ***************");
+					//console.log(self.state);
+					self.service.getBlock(start, (fetchSize+1), self.state, {
 						'success' : function(data) {
 							getBlock(start, data);
 						}
@@ -313,29 +314,45 @@
 //			
 //			self.service.setAsync(true);
 			
-			console.log("invalidate *********");
-			console.log(self.state);
+			//console.log("invalidate *********");
+			//console.log(self.state);
 			// onStateChanged
-			self.service.resetState(self.state ,{
-				'success' : function(newState) {
-					console.log("self.service.resetState *********************");
-					console.log(self.state);
-					self.state = $.extend(true, {}, self.state, newState);
-					console.log(self.state);
-					onRowCountChanged.notify();
-					onStateChanged.notify(self.state);
-					console.log(self.state);
-				}
-			});
-			
 			self.state.localStorage.activeRow.row = null;
+			
+			
+			
+			
 		
 			self.state.active_buffers 	= [];
 			self.state.activeKeys 		= [];		
 			
 			self.buffer 		= new Array();
-			self.reverseLookup 	= new Array();			
+			self.reverseLookup 	= new Array();		
+			
+			self.service.resetState(self.state ,{
+				'success' : function(newState) {
+					//console.log("self.service.resetState *********************");
+					//console.log(self.state);
+					self.state = $.extend(true, {}, self.state, newState);
+					//console.log(self.state);
+					onRowCountChanged.notify();
+					onStateChanged.notify(self.state);
+					//console.log(self.state);
+				}
+			});
 
+		}
+		
+		function getColumnFilters(column) {
+			return self.state.filters[column];
+		}
+		
+		function setColumnFilters(column,filters) {
+			self.state.filters[column]=filters;
+			this.invalidate();
+			//self.filters = filters;
+			//console.log(self.state.filters);
+			onFiltersChanged.notify(filters);
 		}
 		
 		function getSort() {
@@ -560,6 +577,7 @@
 			"onRowCountChanged" : onRowCountChanged,
 			"onRowTotalCountChanged" : onRowTotalCountChanged,
 			"onRowsChanged" : onRowsChanged,
+			"onFiltersChanged" : onFiltersChanged,
 			"getItemMetadata" : getItemMetadata,
 			"setSort" : setSort,
 			"getSort" : getSort,
@@ -572,6 +590,8 @@
 			"invalidate" : invalidate,
 			"saveColumns" : saveColumns,
 			"restoreColumns" : restoreColumns,
+			"getColumnFilters" : getColumnFilters,
+			"setColumnFilters" : setColumnFilters,
 			"self" : self
 
 		};

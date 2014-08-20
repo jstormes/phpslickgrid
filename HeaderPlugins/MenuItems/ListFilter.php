@@ -39,11 +39,11 @@ class PHPSlickGrid_HeaderPlugins_MenuItems_ListFilter extends PHPSlickGrid_Heade
 		$HTML .= "var {$parent->name}_$plugin_id = new PHPSlickGrid.HeaderPlugins.MenuItems.ListFilter({$options},{$GridName},{$GridName}Data);\n\n";
 		$HTML .= "{$parent->name}.registerPlugin({$parent->name}_$plugin_id);\n\n";
 		
-		$HTML .= "{$parent->name}_$plugin_id.updateFilters.subscribe(function () {
-		{$GridName}Data.invalidate();
-		{$GridName}.invalidate();
+	//	$HTML .= "{$parent->name}_$plugin_id.updateFilters.subscribe(function () {
+	//	{$GridName}Data.invalidate();
+	//	{$GridName}.invalidate();
 		//console.log({$GridName}.getColumns());
-			});\n\n";
+	//		});\n\n";
 		
 		
 		return $HTML;

@@ -35,7 +35,7 @@
 		
 		//self.mode = "NOT IN";
 		
-		var updateFilters = new Slick.Event();		
+		//var updateFilters = new Slick.Event();		
 		
 		
 		function init(parent) {
@@ -94,7 +94,7 @@
 			
 			if (data.self.state.filters[self.column_def.field] == undefined) {
 				
-				console.log("Defining column");
+				//console.log("Defining column");
 				listfilter = {};
 				listfilter.list_filter_mode = "NOT IN";
 				listfilter.list_selected = {};
@@ -113,7 +113,7 @@
 			}
 			
 			//var listfilter = data.self.state.filters[self.column_def.id];
-			console.log(listfilter);
+			//console.log(listfilter);
 			
 			// Prime the column definition with our list filter properties
 			//if (self.column_def.list_filter_mode == undefined) {
@@ -207,9 +207,12 @@
 				// on click of the header row set the mode
 				$(args.node).click(function(e) { 
 					setMode(args);
-					if (self.updateFilters.notify(args) == false) {
-						return;
-					}
+					//data.self.state.filters[self.column_def.field]=listfilter;
+					
+					data.setColumnFilters(self.column_def.field,listfilter);
+					//if (self.updateFilters.notify(args) == false) {
+					//	return;
+					//}
 				});
 				
 				
@@ -248,18 +251,18 @@
 				//alert("Check single "+value+" "+self.selected['i'+value]);
 			    //console.log(Object.keys(self.column_def.list_selected).length);
 				
-			    data.self.state.filters[self.column_def.field]=listfilter;
+			   // data.self.state.filters[self.column_def.field]=listfilter;
 			    
-			    console.log("*******************************");
-			    console.log(data.self.state.filters[self.column_def.field].list_filter_mode);
+			    //console.log("*******************************");
+			    //console.log(data.self.state.filters[self.column_def.field].list_filter_mode);
 			    // Can be converted to string in PHP by $in = "'".implode("','",list_selected)."'";
-			    console.log(Object.keys(data.self.state.filters[self.column_def.field].list_selected));
+			   // console.log(Object.keys(data.self.state.filters[self.column_def.field].list_selected));
 			    
 			    
-			    
-			    if (self.updateFilters.notify(args) == false) {
-					return;
-				}
+			    data.setColumnFilters(self.column_def.field,listfilter);
+			   // if (self.updateFilters.notify(args) == false) {
+				//	return;
+				//}
 			    
 			    //self.parentGrid.invalidate();
 			    
@@ -286,7 +289,7 @@
 					
 					listfilter.list_filter_contains = text;
 					
-					data.self.state.filters[self.column_def.field]=listfilter;
+					//data.self.state.filters[self.column_def.field]=listfilter;
 					
 					
 					self.gridLength=0;
@@ -296,30 +299,33 @@
 					
 					// TODO: this needs to be event driven.
 					// attached to the on length changed event
-					if (self.gridLength == 0) {
-						// Hide the "(Selelect All)" header row
-						$(".slick-headerrow-columns").css("height","0px");
-						self.GridCheck.resizeCanvas();
-						
-						// Show no results message
-						$("<div>No items match your search.</div>")
-							.css("line-height","300px")
-							.css("text-align","center")
-							.css("vertical-align","middle")
-							//.css("position","absolute")
-							.css("marginTop","-=300px")
-							//.css("z-index","10000")
-							.appendTo(self.$listfilter);
-					} 
-					else {
-						console.log("Resetting height!!!!!!!!!!!!!!!!!!");
-						$(".slick-headerrow-columns").css("height","22px");
-						self.GridCheck.resizeCanvas();
-					}
+					// Comment out for now
+//					if (self.gridLength == 0) {
+//						// Hide the "(Selelect All)" header row
+//						$(".slick-headerrow-columns").css("height","0px");
+//						self.GridCheck.resizeCanvas();
+//						
+//						// Show no results message
+//						$("<div>No items match your search.</div>")
+//							.css("line-height","300px")
+//							.css("text-align","center")
+//							.css("vertical-align","middle")
+//							//.css("position","absolute")
+//							.css("marginTop","-=300px")
+//							//.css("z-index","10000")
+//							.appendTo(self.$listfilter);
+//					} 
+//					else {
+//						console.log("Resetting height!!!!!!!!!!!!!!!!!!");
+//						$(".slick-headerrow-columns").css("height","22px");
+//						self.GridCheck.resizeCanvas();
+//					}
 					
-					if (self.updateFilters.notify() == false) {
-						return;
-					}
+					
+					data.setColumnFilters(self.column_def.field,listfilter);
+					//if (self.updateFilters.notify() == false) {
+					//	return;
+					//}
 					
 					
 				  }, 200);
@@ -408,9 +414,9 @@
 			"hideDialog" :hideDialog,
 			"appliesToColumn" : appliesToColumn,
 			"getLength": getLength,
-			"getItem": getItem,
+			"getItem": getItem
 			
-			"updateFilters": updateFilters
+		//	"updateFilters": updateFilters
 			//"getGrid": getGrid,
 
 			//"onBeforeMenuShow" : new Slick.Event()

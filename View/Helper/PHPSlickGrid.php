@@ -122,6 +122,8 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 		$HTML .= $this->onColumnsReordered();
 		$HTML .= $this->onColumnsResized();
 		
+		$HTML .= $this->onFiltersChanged();
+		
 		/********************************************************
 		 * Plugins 
 		 *******************************************************/
@@ -280,6 +282,21 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 // 		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
 // 		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
 // 		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
+		$HTML .= "});\n\n";
+		
+		return $HTML;
+	}
+	
+	private function onFiltersChanged() {
+		
+		$GridName = $this->Table->_gridName;
+		
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire up the filters to the grid\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}Data.onFiltersChanged.subscribe(function () {\n";
+		$HTML .= "	{$GridName}.invalidate();\n";
+		$HTML .= "  {$GridName}.render();\n";
 		$HTML .= "});\n\n";
 		
 		return $HTML;
