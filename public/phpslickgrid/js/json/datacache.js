@@ -135,6 +135,8 @@
 		// Merge the saved local storage with the initial state (initial trumps saved)
 		self.state.localStorage = $.extend(true, {}, localStorage, self.state.localStorage);
 		
+		
+		
 		// Save the local storage state
 		store.set(self.state.gridName, self.state.localStorage);
 		
@@ -301,27 +303,8 @@
 		
 		
 		function invalidate() {
-						
-//			self.service.setAsync(false);
-//			var newState = self.service.resetState(self.state);
-//			self.state = $.extend(true, {}, self.state, newState);
-//		
-//			self.state.active_buffers 	= [];
-//			self.state.activeKeys 		= [];		
-//			
-//			self.buffer 		= new Array();
-//			self.reverseLookup 	= new Array();
-//			
-//			self.service.setAsync(true);
 			
-			//console.log("invalidate *********");
-			//console.log(self.state);
-			// onStateChanged
 			self.state.localStorage.activeRow.row = null;
-			
-			
-			
-			
 		
 			self.state.active_buffers 	= [];
 			self.state.activeKeys 		= [];		
@@ -331,13 +314,22 @@
 			
 			self.service.resetState(self.state ,{
 				'success' : function(newState) {
-					//console.log("self.service.resetState *********************");
-					//console.log(self.state);
+					console.log("Resetting state **************");
+					console.log(self.state.filters);
 					self.state = $.extend(true, {}, self.state, newState);
-					//console.log(self.state);
+					/* The jQuery.Zend.jsonrpc class appears to have issues when passed back an empty object.  
+					 * If passed back an empty object it will be converted to an empty array.  I suspect this 
+					 * is due to PHP and JavaScript being a loosely typed language.  
+					 * 
+					 * James Stormes - Aug 20, 2014
+					 */
+					// Repair the filters if changed to array.
+					console.log(self.state.filters);
+					if (Object.prototype.toString.call( self.state.filters )==="[object Array]")
+						self.state.filters={};
+					
 					onRowCountChanged.notify();
 					onStateChanged.notify(self.state);
-					//console.log(self.state);
 				}
 			});
 
@@ -348,10 +340,12 @@
 		}
 		
 		function setColumnFilters(column,filters) {
+			//console.log()
 			self.state.filters[column]=filters;
+			console.log(self.state.filters);
 			this.invalidate();
 			//self.filters = filters;
-			//console.log(self.state.filters);
+			console.log(self.state.filters);
 			onFiltersChanged.notify(filters);
 		}
 		

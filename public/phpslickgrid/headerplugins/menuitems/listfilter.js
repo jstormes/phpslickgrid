@@ -258,6 +258,7 @@
 			    // Can be converted to string in PHP by $in = "'".implode("','",list_selected)."'";
 			   // console.log(Object.keys(data.self.state.filters[self.column_def.field].list_selected));
 			    
+			    console.log(listfilter);
 			    
 			    data.setColumnFilters(self.column_def.field,listfilter);
 			   // if (self.updateFilters.notify(args) == false) {

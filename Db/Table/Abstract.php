@@ -668,8 +668,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	public function getBlock($start, $length, $state) {
 		try
 		{
-			//$this->log->debug("state");
-			//$this->log->debug($state);
+			$this->log->debug("getBlock state");
+			$this->log->debug($state);
 
 			$Results=array();
 				
