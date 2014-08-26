@@ -7,7 +7,7 @@ class PHPSlickGrid_HeaderPlugins_MenuItems_Abstract
 			
 	}
 	
-	public function render($plugin_id, $Table) {
+	public function render($plugin_id, PHPSlickGrid_HeaderPlugins_Abstract $Parent, $GridName) {
 		
 	}
 	
