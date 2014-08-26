@@ -21,6 +21,8 @@
 		
 		var default_options ={};
 		
+		var node = null;
+		
 		self.state = $.extend(true, {}, default_options, options);
 		
 		var service = new jQuery.Zend.jsonrpc({url: options.jsonrpc, async:true, 
@@ -40,13 +42,38 @@
 		
 		function init(parent) {
 
+
 		}
 		
 		function destroy(parent) {
 			
 		}
 		
+		function setIcon() {
+			if ((Object.keys(listfilter.list_selected).length!=0) || (listfilter.list_filter_contains.length!=0)) {
+		    	if (self.node.find('.slick-filter-indicator').length==0) {
+		    		self.node.append( "<span class='slick-filter-indicator'><i class='fa fa-filter'></i></span>" );
+		    	}
+		    }
+		    else {
+		    	//console.log("Remove");
+		    	self.node.find('.slick-filter-indicator').remove();
+		    }
+		}
+		
 		function appliesToColumn(args) {
+			
+			//console.log("header row render");
+			//console.log(args.column);
+			//console.log(data.getColumnFilters());
+			//var node = args.node.innerHTML.span;
+			//var ColumnName = $(args.node);
+			//$(args.node).append( "<span class='slick-filter-indicator'><i class='fa fa-filter'></i></span>" );
+			//console.log(ColumnName.html());
+			//var $ColumnHTML = $(node.innerHTML);
+			//$columnName = $ColumnHTML.closest('slick-column-name');
+			//$columnName.prepend("test");
+			//console.log($columnName);
 			return true;
 		}
 		
@@ -72,6 +99,10 @@
 		
 		function showDialog($dialog,activeColumn,$activeHeaderColumn,parent) {
 			
+			console.log("Show Dialog");
+			console.log($activeHeaderColumn.html());
+			
+			self.node=$activeHeaderColumn;
 			self.column_def = activeColumn;	// Column definition
 			
 			//self.parentGrid =  parent.getGrid();
@@ -164,6 +195,8 @@
 			// Build (Select All) header under search header.
 			self.GridCheck.onHeaderRowCellRendered.subscribe(function(e, args) {
 				
+
+				
 				// Set our default icon and string
 				if (args.column.id=="selected") {
 					self.$allIcon=$(args.node);
@@ -208,8 +241,9 @@
 				$(args.node).click(function(e) { 
 					setMode(args);
 					//data.self.state.filters[self.column_def.field]=listfilter;
-					
+					setIcon();
 					data.setColumnFilters(self.column_def.field,listfilter);
+					
 					//if (self.updateFilters.notify(args) == false) {
 					//	return;
 					//}
@@ -220,6 +254,8 @@
 		    });
 			
 			self.GridCheck.onClick.subscribe(function(e, args) {
+				
+				
 				
 				var cell = self.GridCheck.getCellFromEvent(e);
 			    var value=self.getItem(cell.row).value;
@@ -246,6 +282,8 @@
 			    	$( "<i class='fa fa-check-square'></i>" ).appendTo(self.$allIcon);
 			    }
 			    
+			    
+			    
 			    //self.selected['i'+value]=self.selected['i'+value]?false:true;
 			    
 				//alert("Check single "+value+" "+self.selected['i'+value]);
@@ -259,6 +297,20 @@
 			   // console.log(Object.keys(data.self.state.filters[self.column_def.field].list_selected));
 			    
 			    console.log(listfilter);
+			    console.log("Icon");
+			    //console.log(self.node);
+			    console.log(self.node.find('.slick-filter-indicator').length);
+			    //if ((Object.keys(listfilter.list_selected).length!=0) || (listfilter.list_filter_contains.length!=0)) {
+			    //	if (self.node.find('.slick-filter-indicator').length==0) {
+			    //		self.node.append( "<span class='slick-filter-indicator'><i class='fa fa-filter'></i></span>" );
+			    //	}
+			    //}
+			    //else {
+			    	//console.log("Remove");
+			    //	self.node.find('.slick-filter-indicator').remove();
+			    //}
+			    setIcon();
+			    
 			    
 			    data.setColumnFilters(self.column_def.field,listfilter);
 			   // if (self.updateFilters.notify(args) == false) {
@@ -322,7 +374,7 @@
 //						self.GridCheck.resizeCanvas();
 //					}
 					
-					
+					setIcon();
 					data.setColumnFilters(self.column_def.field,listfilter);
 					//if (self.updateFilters.notify() == false) {
 					//	return;

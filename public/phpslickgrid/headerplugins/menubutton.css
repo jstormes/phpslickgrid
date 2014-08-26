@@ -52,3 +52,20 @@
 .no-scroll {
 	overflow: hidden;
 }
+
+.slick-column-name,
+.slick-filter-indicator
+.slick-sort-indicator {
+  /**
+   * This makes all "float:right" elements after it that spill over to the next line
+   * display way below the lower boundary of the column thus hiding them.
+   */
+  display: inline-block;
+  float: left;
+  margin-bottom: 100px;
+}
+
+/* Make filter icon match sort indicator */
+.slick-filter-indicator {
+	color: #618ecf;
+}
