@@ -739,6 +739,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	public function addFiltersToSelect($filters, Zend_Db_Select $select, $ignore = null) {
 		
+		if (!is_array($filters))
+			return $select;
+		
 		foreach ($filters as $column=>$filter) {
 			// get the table+column.
 			$table_column = str_replace("$",".",$column); 
