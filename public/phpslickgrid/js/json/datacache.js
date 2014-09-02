@@ -364,9 +364,9 @@
 			
 			for (var i = 0; i < sortarray.length; i++) {
 				if (sortarray[i].sortAsc)
-					self.state.order_list.push(self.state.gridName+"$"+sortarray[i].columnId);
+					self.state.order_list.push(sortarray[i].columnId+ ' asc');
 				else
-					self.state.order_list.push(self.state.gridName+"$"+sortarray[i].columnId+' desc');
+					self.state.order_list.push(sortarray[i].columnId+' desc');
 			}
 		}
 		
