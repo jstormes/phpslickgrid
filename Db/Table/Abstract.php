@@ -198,9 +198,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridState['tableName'] = $this->_name;
 		
 		/* Get control columns */
-		$this->_gridState['primay_col'] = $this->_gridName."$".$this->_primary_col;
-		$this->_gridState['upd_dtm_col'] = $this->_gridName."$".$this->_upd_dtm_col;
-		$this->_gridState['deleted_col'] = $this->_gridName."$".$this->_deleted_col;
+		$this->_gridState['primay_col'] = $this->_gridName.".".$this->_primary_col;
+		$this->_gridState['upd_dtm_col'] = $this->_gridName.".".$this->_upd_dtm_col;
+		$this->_gridState['deleted_col'] = $this->_gridName.".".$this->_deleted_col;
 		
 		// Hook into grid init.
 		$this->_gridInit();
@@ -517,7 +517,8 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 					
 				$count_select = $this->select();
 				$count_select->setIntegrityCheck(false);
-				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridState['primay_col']}) as num");
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(`{$this->_gridState['primay_col']}`) as num");
+				//$this->log->debug($count_select->__toString());
 				$row = $this->fetchRow($count_select);
 				if ($row->num!==null)
 					$this->_MaxPrimary=$row->num;
@@ -547,7 +548,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 					
 				$count_select = $this->select();
 				$count_select->setIntegrityCheck(false);
-				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX({$this->_gridState['upd_dtm_col']}) as num");
+				$count_select->from(new Zend_Db_Expr("(".$select.")"), "MAX(`{$this->_gridState['upd_dtm_col']}`) as num");
 				$row = $this->fetchRow($count_select);
 				
 				$this->_MaxDateTime=$row->num;
@@ -628,7 +629,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			$columns['row_number']="(@row_number:=@row_number+1)";
 		
 		foreach($this->_info['cols'] as $key=>$value) {
-			$columns[$this->_info['name']."$".$value]=$this->_info['name'].".".$value;
+			$columns[$this->_info['name'].".".$value]=$this->_info['name'].".".$value;
 		}
 	
 		$select = $this->select();
