@@ -452,14 +452,17 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		// Get info on source table
 		$info=$this->info();
 		
+		$dbname = $info['name'];
+		
 		// Set column from the database table columns.
 		foreach($info['cols'] as $DBColumn) {
 			
 			$newColumn = array();
 		
 			// Set the default Slickgrid id for the column = database column name
-			$newColumn['id']=$DBColumn;
-		
+			//$newColumn['id']=$DBColumn;
+			$newColumn['id']=$dbname.".".$DBColumn;
+			
 			// If this column is the same as the primary key for the table,
 			// name the Slickgrid column "#" else the name of the column will match
 			// the database column.
@@ -473,7 +476,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 			}
 		
 			// Set the Slickgrid field to (table_name)$(column_name)
-			$newColumn['field']=$this->_name."$".$DBColumn;
+			$newColumn['field']=$this->_name.".".$DBColumn;
 		
 			// Default to sortable
 			$newColumn['sortable']=true;
