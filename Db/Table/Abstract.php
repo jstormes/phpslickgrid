@@ -427,7 +427,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		foreach($this->_gridColumns as $Column) {
 			//$db_column=$this->DerefrenceTable($Column->field);
 			// Don't setup hidden columns.
-			if (!in_array($Column['id'], $this->Hidden)) {
+			if (!in_array(str_replace($this->_info['name'].".", '', $Column['id']), $this->Hidden)) {
 				if (!$Column['hidden']) {
 					$line="";
 					foreach($Column as $Key=>$setting) {
