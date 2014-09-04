@@ -202,6 +202,19 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridState['upd_dtm_col'] = $this->_gridName.".".$this->_upd_dtm_col;
 		$this->_gridState['deleted_col'] = $this->_gridName.".".$this->_deleted_col;
 		
+		/* Set some defaults */
+		$this->_gridState['editable']             = true;
+		$this->_gridState['enableAddRow']         = true;
+		$this->_gridState['enableCellNavigation'] = true;
+		$this->_gridState['enableEditorLoading']  = false;
+		$this->_gridState['autoEdit']             = true;
+		$this->_gridState['enableColumnReorder']  = true;
+		$this->_gridState['forceFitColumns']      = false;
+		$this->_gridState['rowHeight']            = 22;
+		$this->_gridState['autoHeight']           = false;
+		$this->_gridState['multiColumnSort']      = true;
+		$this->_gridState['minWidth']			  = 5;
+		
 		// Hook into grid init.
 		$this->_gridInit();
 				
@@ -226,18 +239,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$this->_gridState['maxDateTime']      = $this->getMaxDateTime(); // filtered max date time
 		
 		
-		/* Set some defaults */
-		$this->_gridState['editable']             = true;
-		$this->_gridState['enableAddRow']         = true;
-		$this->_gridState['enableCellNavigation'] = true;
-		$this->_gridState['enableEditorLoading']  = false;
-		$this->_gridState['autoEdit']             = true;
-		$this->_gridState['enableColumnReorder']  = true;
-		$this->_gridState['forceFitColumns']      = false;
-		$this->_gridState['rowHeight']            = 22;
-		$this->_gridState['autoHeight']           = false;
-		$this->_gridState['multiColumnSort']      = true;
-		$this->_gridState['minWidth']			  = 5;
+		
 		
 		$this->_initState();
 	}
