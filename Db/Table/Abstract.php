@@ -211,6 +211,10 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 	
 	}
 	
+	public function getGridName() {
+		return $this->_gridName;
+	}
+	
 	public function initState() {
 			
 		
@@ -341,7 +345,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$count_select->from(new Zend_Db_Expr("(".$select.")"), "*");
 		
 		// Look for the Key
-		$count_select->where("{$this->_gridState['primay_col']} = ?",$key);
+		$count_select->where("`{$this->_gridState['primay_col']}` = ?",$key);
 		
 		$row = $this->fetchRow($count_select);
 		if ($row != null)
@@ -689,8 +693,14 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 				$select->limit($length,$start);
 	
 				// Build our order by
+				//foreach($state['order_list'] as $orderby) {
+				//	$select->order($orderby);
+				//}
+				// Build our order by
 				foreach($state['order_list'] as $orderby) {
-					$select->order($orderby);
+					// Quote our field name
+					$e = explode(" ",$orderby);
+					$select->order(new Zend_Db_Expr("`{$e[0]}` {$e[1]}"));
 				}
 				
 				// Get rows
@@ -793,9 +803,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		
 		$inScope=array();
 		foreach($rows as $row) {
-			if ($row[$this->_gridName."$".$this->_upd_dtm_col]>$state['maxDateTime'])
+			if ($row[$this->_gridName.".".$this->_upd_dtm_col]>$state['maxDateTime'])
 				$ret['UpdatedRows'][]=$row;
-			$inScope[] = $row[$this->_gridName."$".$this->_primary_col];
+			$inScope[] = $row[$this->_gridName.".".$this->_primary_col];
 		}
 
 		// Find rows that have fallen out of scope.
@@ -813,7 +823,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$Row = array();
 	
 		foreach($row as $Key=>$Value) {
-			$Key = str_replace($info['name']."$", "", $Key);
+			$Key = str_replace($info['name'].".", "", $Key);
 			$Row[$info['name']."$".$Key]=$Value;
 		}
 	
@@ -826,7 +836,7 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$Row = array();
 	
 		foreach($row as $Key=>$Value) {
-			$Key = str_replace($info['name']."$", "", $Key);
+			$Key = str_replace($info['name'].".", "", $Key);
 			$Row[$Key]=$Value;
 		}
 	

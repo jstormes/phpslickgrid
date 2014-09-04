@@ -112,16 +112,16 @@ class PHPSlickgrid_View_Helper_ProxyGrid extends Zend_View_Helper_Abstract
 		 * Grid Events
 		 *******************************************************/
 		$HTML .= $this->onSort();
-		$HTML .= $this->onCellChange();
-		$HTML .= $this->onAddNewRow();
-		$HTML .= $this->onActiveCellChanged();
+		//$HTML .= $this->onCellChange();
+		//$HTML .= $this->onAddNewRow();
+		//$HTML .= $this->onActiveCellChanged();
 		
-		$HTML .= $this->onStateChanged();
+		//$HTML .= $this->onStateChanged();
 		
-		$HTML .= $this->onActiveKeyLoaded();
+		//$HTML .= $this->onActiveKeyLoaded();
 		
-		$HTML .= $this->onColumnsReordered();
-		$HTML .= $this->onColumnsResized();
+		//$HTML .= $this->onColumnsReordered();
+		//$HTML .= $this->onColumnsResized();
 		
 		$HTML .= $this->onFiltersChanged();
 		
