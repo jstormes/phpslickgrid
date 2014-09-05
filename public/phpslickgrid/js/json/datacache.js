@@ -214,11 +214,14 @@
 			while (self.state.active_buffers.length>=self.state.bufferMax) {
 				var toRemove=self.state.active_buffers.shift();
 				self.state.activeKeys.shift();
-				delete self.reverseLookup["k" + self.buffer[toRemove][self.state.primay_col]];
-				delete self.buffer[toRemove];
+				if (self.buffer[toRemove]!=undefined) {
+					delete self.reverseLookup["k" + self.buffer[toRemove][self.state.primay_col]];
+					delete self.buffer[toRemove];
+				}
 				
 				// delete any out of scope refrence
-				delete self.outOfScope["k" + toRemove];
+				if (self.outOfScope["k" + toRemove]!=undefined)
+					delete self.outOfScope["k" + toRemove];
 			}
 		}
 		
