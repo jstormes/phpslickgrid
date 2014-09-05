@@ -112,8 +112,8 @@ class PHPSlickgrid_View_Helper_ProxyGrid extends Zend_View_Helper_Abstract
 		 * Grid Events
 		 *******************************************************/
 		$HTML .= $this->onSort();
-		//$HTML .= $this->onCellChange();
-		//$HTML .= $this->onAddNewRow();
+		$HTML .= $this->onCellChange();
+		$HTML .= $this->onAddNewRow();
 		//$HTML .= $this->onActiveCellChanged();
 		
 		//$HTML .= $this->onStateChanged();
@@ -122,6 +122,8 @@ class PHPSlickgrid_View_Helper_ProxyGrid extends Zend_View_Helper_Abstract
 		
 		//$HTML .= $this->onColumnsReordered();
 		//$HTML .= $this->onColumnsResized();
+		
+		$HTML .= $this->onInvalidate();
 		
 		$HTML .= $this->onFiltersChanged();
 		
@@ -215,6 +217,24 @@ class PHPSlickgrid_View_Helper_ProxyGrid extends Zend_View_Helper_Abstract
 		$HTML .= "  var ActiveRow = parseInt({$GridName}Data.getActiveRow());\n";
 		$HTML .= "  var ActiveCell = parseInt({$GridName}Data.getActiveCell());\n";
 		$HTML .= "  {$GridName}.setActiveCell(ActiveRow,ActiveCell);\n";
+		$HTML .= "});\n\n";
+	
+		return $HTML;
+	
+	}
+	
+	private function onInvalidate() {
+	
+		$GridName = $this->Table->_gridName;
+	
+		$HTML  = "// ****************************************************************\n";
+		$HTML .= "// Wire active cell selected from the grid to the data cache\n";
+		$HTML .= "// ****************************************************************\n";
+		$HTML .= "{$GridName}Data.onInvalidate.subscribe(function (state) { \n";
+		$HTML .= "  console.log('Invalidate***********************************');\n";
+		//$HTML .= "  {$GridName}Data.invalidate();\n";
+		$HTML .= "  {$GridName}.invalidate();\n";
+		$HTML .= "  {$GridName}.render();\n";
 		$HTML .= "});\n\n";
 	
 		return $HTML;

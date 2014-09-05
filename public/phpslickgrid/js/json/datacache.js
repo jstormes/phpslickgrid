@@ -157,6 +157,7 @@
 		var onRowTotalCountChanged = new Slick.Event();
 		var onStateChanged = new Slick.Event();
 		var onFiltersChanged = new Slick.Event();
+		var onInvalidate = new Slick.Event();
 
 		
 		
@@ -435,6 +436,11 @@
 		}
 		
 		function updateItem(item) {
+			console.log("updateItem()");
+			console.log(item);
+			console.log(item[self.state['primay_col']]);
+			if (item[self.state['primay_col']]==null)
+				return addItem(item);
 			// Don't let the user move on until the row has been saved.  
 			self.service.setAsync(false);
 			var data = self.service.updateItem(item, self.state);
@@ -444,6 +450,8 @@
 		}
 
 		function addItem(item) {
+			
+			console.log("AddItem()");
 			// Don't let the user move on until the row has been saved.  
 			self.service.setAsync(false);
 			var NewRow = self.service.addItem(item, self.state);
@@ -456,6 +464,15 @@
 			onRowsChanged.notify({rows: [parseInt(self.state.gridLength)]}, null, self);
 			self.state.gridLength++;
 			onRowCountChanged.notify();
+			
+			
+			self.state.active_buffers 	= [];
+			self.state.activeKeys 		= [];		
+			
+			self.buffer 		= new Array();
+			self.reverseLookup 	= new Array();		
+			
+			onInvalidate.notify();
 			
 		}
 		
@@ -573,6 +590,7 @@
 			"onRowsChanged" : onRowsChanged,
 			"onFiltersChanged" : onFiltersChanged,
 			"getItemMetadata" : getItemMetadata,
+			"onInvalidate" : onInvalidate,
 			"setSort" : setSort,
 			"getSort" : getSort,
 			"setActive" : setActive,

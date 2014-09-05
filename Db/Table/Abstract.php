@@ -796,9 +796,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 		$ret['outOfScope']	= array();
 		
 		$select = $this->buildSelect($state);
-		$select = $this->addConditionsToSelect($select);
+		//$select = $this->addConditionsToSelect($select);
 		
-		$select->where("{$this->_primary_col} IN(?)", $state['activeKeys']);
+		//$select->where("{$this->_primary_col} IN(?)", $state['activeKeys']);
 		//$select->where("{$this->_upd_dtm_col} > ?",$state['maxDateTime']);
 		
 		$rows = $this->fetchAll($select)->toArray();
