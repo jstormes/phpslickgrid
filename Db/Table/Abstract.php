@@ -438,8 +438,9 @@ class PHPSlickGrid_Db_Table_Abstract extends Zend_Db_Table_Abstract
 							$line.=$Key.": ".($setting?'true':'false').", ";
 						else
 							$line.=$Key.": ".$setting.", ";
-						else
+						else if (!is_array($setting))
 							$line.=$Key.": \"".$setting."\", ";
+						else $line.=$Key.": ".json_encode($setting).", ";
 					}
 					$line="\t{".rtrim($line,', ')."},\n";
 					$column.=$line;
