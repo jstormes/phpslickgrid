@@ -130,6 +130,7 @@
 				listfilter.list_filter_mode = "NOT IN";
 				listfilter.list_selected = {};
 				listfilter.list_filter_contains = "";
+				listfilter.simple_filters = [];
 				
 				data.self.state.filters[self.column_def.field]=listfilter;
 				

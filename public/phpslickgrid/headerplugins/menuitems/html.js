@@ -34,8 +34,8 @@
 			return true;
 		}
 		
-		function showDialog($dialog) {
-			$item_div=$("<div>"+html+"</div>").appendTo($dialog);
+		function showDialog($dialog,activeColumn,$activeHeaderColumn,parent) {
+			$item_div=$("<div>SimpleFilter</div>").appendTo($dialog);
 		}
 		
 		function setHTML(shtml) {
