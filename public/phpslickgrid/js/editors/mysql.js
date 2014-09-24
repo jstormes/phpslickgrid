@@ -10,7 +10,9 @@
     "PHPSlick": {
       "Editors": {
         "text": TextEditor,
+        "varchar": TextEditor,
         "decimal": TextEditor,
+        "float": TextEditor,
         "timestamp": TextEditor,
         "bigint": IntegerEditor,
         "date": DateEditor,
