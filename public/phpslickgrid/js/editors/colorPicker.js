@@ -23,6 +23,7 @@
     var $input, $wrapper;
     var defaultValue;
     var scope = this;
+    console.log('input '+scope);
     var randomnumber = Math.floor(Math.random()*1000000);
     
     this.init = function () {
@@ -34,7 +35,7 @@
       $input = $("<input type='text'id='colorPicker_"+randomnumber+"'>" +
       		"<script>" +
       		"$('#colorPicker_"+randomnumber+"').spectrum({" +
-      		"	color: '"+ defaultValue +"'," +
+      		"	color: '#FFFFFF'," +
       		"	preferredFormat: 'hex'" +
       		"});" +
       		"</script>")
