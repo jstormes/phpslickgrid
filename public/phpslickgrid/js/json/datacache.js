@@ -182,6 +182,7 @@
 			}, // Connection error
 			'exceptionHandler' : function(data) {
 				alert(data);
+				onInvalidate.notify();
 			}
 		}); // thrown exception.
 		
