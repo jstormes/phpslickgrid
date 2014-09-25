@@ -76,6 +76,12 @@
 
     this.show = function () {
       $wrapper.show();
+       if ($input.val()=='') {
+          $('#colorPickerBg').spectrum({
+        	color: '#FFFFFF',
+		  	preferredFormat: 'hex'
+          });
+       }
     };
 
     this.position = function (position) {
