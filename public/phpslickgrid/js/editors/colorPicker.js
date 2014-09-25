@@ -23,8 +23,6 @@
     var $input, $wrapper;
     var defaultValue;
     var scope = this;
-    console.log('input '+scope);
-    var randomnumber = Math.floor(Math.random()*1000000);
     
     this.init = function () {
       var $container = $("body");
@@ -32,24 +30,20 @@
       $wrapper = $("<DIV style='z-index:10000;position:absolute;background:white;padding:5px;border:3px solid gray; -moz-border-radius:10px; border-radius:10px;'/>")
           .appendTo($container);
 
-      $input = $("<input type='text'id='colorPicker_"+randomnumber+"'>" +
-      		"<script>" +
-      		"$('#colorPicker_"+randomnumber+"').spectrum({" +
-      		"	color: '#FFFFFF'," +
-      		"	preferredFormat: 'hex'" +
-      		"});" +
-      		"</script>")
+      $input = $("<input type='text' id='colorPickerBg'>")
           .appendTo($wrapper);
 
       $("<DIV style='text-align:right'><BUTTON>Save</BUTTON><BUTTON>Cancel</BUTTON></DIV>")
           .appendTo($wrapper);
-
       $wrapper.find("button:first").bind("click", this.save);
       $wrapper.find("button:last").bind("click", this.cancel);
       $input.bind("keydown", this.handleKeyDown);
 
       scope.position(args.position);
       $input.focus().select();
+      
+		
+      
     };
 
     this.handleKeyDown = function (e) {
@@ -92,6 +86,7 @@
 
     this.destroy = function () {
       $wrapper.remove();
+      $input.remove();
     };
 
     this.focus = function () {
@@ -99,7 +94,18 @@
     };
 
     this.loadValue = function (item) {
-      $input.val(defaultValue = item[args.column.field]);
+      //$input.val(defaultValue = item[args.column.field]);
+      var tmpColor = null;
+      if (item[args.column.field]===undefined) {
+    	  tmpColor = "#FFFFFF";
+      } else {
+    	  tmpColor = item[args.column.field];
+      }
+      $input.val(defaultValue = tmpColor);
+    	$('#colorPickerBg').spectrum({
+  			color: '#'+tmpColor,
+  			preferredFormat: 'hex'
+  		});
       $input.select();
     };
 
