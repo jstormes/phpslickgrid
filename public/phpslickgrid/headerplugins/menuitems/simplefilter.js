@@ -46,6 +46,70 @@
 			return true;
 		}
 		
+		function setIcon() {
+			if ((Object.keys(listfilter.list_selected).length!=0) || (listfilter.list_filter_contains.length!=0)) {
+		    	if (self.node.find('.slick-filter-indicator').length==0) {
+		    		self.node.append( "<span class='slick-filter-indicator'><i class='fa fa-filter'></i></span>" );
+		    	}
+		    }
+		    else {
+		    	//console.log("Remove");
+		    	self.node.find('.slick-filter-indicator').remove();
+		    }
+		}
+		
+		function SQLTypeToDropDownOptions(SQLType) {
+			var Options = '<option value="co">Choose One</option>';
+			if (typeof SQLType != 'undefined') {
+
+				switch (SQLType) {
+					case 'varchar' :
+						//console.log(columnDef.sql_type);
+						Options += '<option value="eq">Equal To</option>';
+						Options += '<option value="not">Is Not</option>';
+						Options += '<option value="cn">Contains</option>';
+						Options += '<option value="nc">Does not Contain</option>';
+						Options += '<option value="bw">Begins With</option>';
+						Options += '<option value="ew">Ends With</option>';
+						FOptions=['co','eq','not','cn','bw','ew'];
+						break;
+
+					case 'bigint' :
+					case 'int' :
+						Options += '<option value="eq">Equal To</option>';
+						Options += '<option value="not">Is Not</option>';
+						Options += '<option value="lt">Less Than</option>';
+						Options += '<option value="le">Less Than or Equal To</option>';
+						Options += '<option value="gt">Greater Than</option>';
+						Options += '<option value="ge">Greater Than or Equal To</option>';
+						// Options += '<option value="be">Between</option>';
+						FOptions=['co','eq','not','cn','bw','ew'];
+						break;
+
+					case 'date' :
+						Options += '<option value="eq">Equal To</option>';
+						Options += '<option value="not">Is Not</option>';
+						Options += '<option value="lt">Less Than</option>';
+						Options += '<option value="le">Less Than or Equal To</option>';
+						Options += '<option value="gt">Greater Than</option>';
+						Options += '<option value="ge">Greater Than or Equal To</option>';
+						// Options += '<option value="be">Between</option>';
+						FOptions=['co','eq','not','cn','bw','ew'];
+						break;
+
+					case 'text' :
+						Options += '<option value="cn">Contains</option>';
+						Options += '<option value="nc">Does not Contain</option>';
+						Options += '<option value="bw">Begins With</option>';
+						Options += '<option value="ew">Ends With</option>';
+						FOptions=['co','cn','bw','ew'];
+						break;
+
+				}
+			}
+			return Options;
+		}
+		
 		function showDialog($dialog,activeColumn,$activeHeaderColumn,parent) {
 			
 			self.node=$activeHeaderColumn;
@@ -187,6 +251,73 @@
 			    .appendTo($itemDiv);
 				
 			}
+			  
+			  function filterItemClick(e) {
+					
+					//console.log("filterItemClick");
+					
+					activeColumn = $(this).data('activeColumn');
+					idx = $(this).data('idx');
+					
+					// Make sure the selected filter exists
+					if (typeof activeColumn.Filters[idx] == 'undefined')
+						activeColumn.Filters[idx] = {
+							'operator' : 'co',
+							'value' : '',
+							'andor' : 'and'
+						};
+					
+					// update the filter item in the array
+					name = $(this).attr('name');
+					
+					switch (name) {
+						case 'searchvalue' :
+							if (activeColumn.Filters[idx].operator==''){
+								activeColumn.Filters[idx].operator='eq';
+								$(this).data('opt').selectedIndex = 2;
+								
+							}
+							if (activeColumn.Filters[idx].operator=='co') {
+								//$(this).data('opt').val('eq');
+								$sel = $(this).data('opt');
+								
+								//var values = $.map($sel, function(elt, i) { return $(elt).val();});
+								//console.log(values);
+								//$sel.val(2);
+								activeColumn.Filters[idx].operator=$sel[1];
+								//console.log($(this).data('opt'));
+								//$(this).data('opt').selectedIndex = 2;
+							}
+							activeColumn.Filters[idx].value = e.currentTarget.value;
+							break;
+						case 'operator' :
+							//console.log(activeColumn.Filters[idx].value);
+							activeColumn.Filters[idx].operator = e.currentTarget.value;
+							if (e.currentTarget.value == 'co') {
+								activeColumn.Filters.splice(idx, 1);
+							}
+							break;
+						default :
+							activeColumn.Filters[idx].andor = e.currentTarget.value;
+							//if (activeColumn.Filters[idx].operator=='co')
+							//	activeColumn.Filters[idx].operator='eq';
+							break;
+					}
+					
+					if (self.updateFilters.notify(e) == false) {
+						return;
+					}
+					
+					invalidate();
+					
+					// Stop propagation so that it doesn't register as a header
+					// click
+					e.preventDefault();
+					e.stopPropagation();
+					
+				}
+				
+				invalidate();
 
 		}
 		
