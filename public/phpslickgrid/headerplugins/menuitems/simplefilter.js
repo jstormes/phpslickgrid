@@ -138,8 +138,9 @@
 			
 			  function invalidate() {
 				
-				$ParentDiv.empty();
-				
+				//$ParentDiv.empty();
+				  $ParentDiv = $item_div;
+				  
 				$("<div style='text-align:center;'><b>Custom Filters</b></div>").appendTo($ParentDiv);
 				
 				// Make sure our column has an array of filters
@@ -252,6 +253,15 @@
 				
 			}
 			  
+			  function clearSimpleFilter(e) {
+					activeColumn.Filters = new Array();
+					invalidate();
+					
+					if (self.updateFilters.notify(e) == false) {
+						return;
+					}
+				}
+			  
 			  function filterItemClick(e) {
 					
 					//console.log("filterItemClick");
@@ -304,9 +314,9 @@
 							break;
 					}
 					
-					if (self.updateFilters.notify(e) == false) {
-						return;
-					}
+					//if (self.updateFilters.notify(e) == false) {
+					//	return;
+					//}
 					
 					invalidate();
 					
