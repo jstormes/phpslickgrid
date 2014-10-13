@@ -193,9 +193,31 @@
 		 * (self.state.gridLength) and the total number of rows 
 		 * (self.state.totalRows).
 		 */
+		//function getLength() {
+		//	return (self.state.gridLength - 0);
+		//}
+		
 		function getLength() {
-			return (self.state.gridLength - 0);
-		}
+
+			  function update(data) {
+				  self.state.gridLength=data;
+				  //console.log($("#lowerright").text());
+				 // $("#lowerright").text(self.datalength);
+				  
+
+				  onRowCountChanged.notify({previous: 0, current: (self.state.gridLength - 0)}, null, self);
+				  
+			  }
+
+			  
+		        if (self.datalength==0) {
+		            self.service.getLength(self.state,{'success' : function(data){update(data); } });
+		            return 0;
+		        }        
+		        
+		        return (self.state.gridLength - 0);
+		  }
+
 		
 		function AddItemToBuffer(row, item){
 			
@@ -567,6 +589,33 @@
 			setTimeout(SyncRequest, parseInt(self.state.pollFrequency));
 		}
 		
+		function syncLength() {
+			//console.log("Length **********************************");
+			
+			function update(data) {
+				  self.state.gridLength=data;
+				  console.log("Length **********************************");
+				  console.log(self.state.gridLength);
+				 // $("#lowerright").text(self.datalength);
+				  
+
+				  onRowCountChanged.notify({previous: 0, current: (self.state.gridLength - 0)}, null, self);
+				  
+				  //setTimeout(syncLength, 5000);
+			  }
+
+			  
+		        //if (self.datalength===null) {
+		            self.service.getLength(self.state,{'success' : function(data){update(data); } });
+		        //    return 0;
+		        //}  
+		            
+		}
+		
+	
+		
+		setTimeout(syncLength, 5);
+	
 		function getItemMetadata(row) {
 
 			if (typeof(self.outOfScope["k"+row])!='undefined') {
@@ -608,7 +657,8 @@
 			"restoreColumns" : restoreColumns,
 			"getColumnFilters" : getColumnFilters,
 			"setColumnFilters" : setColumnFilters,
-			"self" : self
+			"self" : self,
+			"syncLength" : syncLength
 
 		};
 	}
