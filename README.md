@@ -1,3 +1,7 @@
+# NOTICE:
+I am in the process of changeing this to work with ZF2.  The current version is broken until I get conversion done.
+
+
 # Welcome to PHPSlickGrid
 
 ## PHPSlickGrid provides server side support for using SlickGrid in PHP/Zend Framework 1.12
