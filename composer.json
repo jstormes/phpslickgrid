@@ -1,0 +1,31 @@
+{
+    "name": "jstormes/phpslickgrid",
+    "description": "SlickGrid support library for ZF2",
+    "type" : "library",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "jstormes",
+            "email": "jstormes@stormes.net"
+        }
+    ],
+    "keywords" : [
+        "zend",
+        "zend framework 2",
+        "zf2",
+        "bootstrap",
+        "slickgrid",
+        "phpslickgrid"
+    ],
+    "require": {
+	"php": ">=5.3.3"
+    },
+    "autoload": {
+        "psr-4": {
+        	"JStormes\\PHPSlickGrid\\": "src/PHPSlickGrid"
+        },
+        "classmap": [
+            "Module.php"
+        ]
+    }
+}
