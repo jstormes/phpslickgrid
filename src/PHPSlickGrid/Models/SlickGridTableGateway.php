@@ -88,9 +88,18 @@ class SlickGridTableGateway extends AbstractSlickGridGateway
         return $options;
     }
     
+    /**
+     * 
+     * @return multitype:
+     */
     public function getData() {
         
+        $rows = $this->tableGateway->select();
         
+        if ($rows)
+            return $rows->toArray();
+        
+        return array();
         
     }
     
