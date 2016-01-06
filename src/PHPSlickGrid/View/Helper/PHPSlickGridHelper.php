@@ -1,11 +1,24 @@
 <?php
 
 /**
+ * PHPSlickGrid (https://github.com/jstormes/phpslickgrid)
+ *
+ * @link      https://github.com/jstormes/phpslickgrid for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 James Stormes (http://www.stormes.net)
+ * @license   https://github.com/jstormes/phpslickgrid/blob/master/LICENSE GNU LESSER GENERAL PUBLIC LICENSE
+ * @author    jstormes
+ */
+
+namespace JStormes\PHPSlickGrid\View\Helper;
+
+use Zend\View\Helper\AbstractHelper;
+
+/**
  *
  * @author jstormes
  *
  */
-class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
+class PHPSlickGridHelper extends AbstractHelper
 {
 	/**
 	 * Table
@@ -20,6 +33,19 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	 */
 	var $Options = null;
 	
+	public function __invoke()
+	{
+	    //$sm = $this->getServiceLocator()->getServiceLocator();
+	    
+	    //$table = $sm->get($DataService);
+	    return "<p>Hello World2</p>".$this->Table;
+	    
+	}
+	
+	public function __construct($Table) {
+	    $this->Table = $Table;
+	}
+	
 	/**
 	 * 
 	 *
@@ -29,7 +55,11 @@ class PHPSlickgrid_View_Helper_PHPSlickgrid extends Zend_View_Helper_Abstract
 	 * @param array $Options
 	 * @return string
 	 */
-	public function PHPSlickgrid(PHPSlickGrid_Db_Table $Table,$Class=null,$Style=null) {
+	//public function PHPSlickGridHelper() {
+	public function PHPSlickGridHelper($Table=null,$Class=null,$Style=null) {
+	    $this->Table = $Table;
+	    
+	    return "<p>Hello World</p>";
 		
 		// Grab a refrence to the logger.
 		$this->log              = Zend_Registry::get('log');
