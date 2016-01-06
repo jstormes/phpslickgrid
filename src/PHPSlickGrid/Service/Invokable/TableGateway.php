@@ -4,6 +4,7 @@ namespace JStormes\PHPSlickGrid\Service\Invokable;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Db\TableGateway\TableGateway as DbTableGateway;
+use JStormes\PHPSlickGrid\Models\SlickGridTableGateway;
 
 class TableGateway implements ServiceLocatorAwareInterface
 {
@@ -33,7 +34,8 @@ class TableGateway implements ServiceLocatorAwareInterface
             $this->cache[$cacheKey] = new $className();
         } else {
             $db = $this->serviceLocator->get('database');
-            $this->cache[$cacheKey] = new DbTableGateway($tableName, $db, $features, $resultSetPrototype);
+            //$this->cache[$cacheKey] = new DbTableGateway($tableName, $db, $features, $resultSetPrototype);
+            $this->cache[$cacheKey] = new SlickGridTableGateway($tableName, $db, $features, $resultSetPrototype);
         }
 
         return $this->cache[$cacheKey];

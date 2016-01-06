@@ -5,6 +5,10 @@ namespace JStormes\PHPSlickGrid\Models;
 
 class AbstractSlickGridGateway 
 {
+    /**
+     * 
+     * @var Zend\Db\TableGateway\TableGateway
+     */
     protected $tableGateway=null;
 
 	public function __construct(\Zend\Db\TableGateway $tableGateway=null) {
